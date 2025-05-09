@@ -1,0 +1,15 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/210586459677099678/cf2d1e93268e4fde899a697a9f59522a/artifacts
+end_time: 1746779147004
+entry_point_name: ''
+experiment_id: '210586459677099678'
+lifecycle_stage: active
+run_id: cf2d1e93268e4fde899a697a9f59522a
+run_name: First Run with full data and business cost and threshold optimization
+run_uuid: cf2d1e93268e4fde899a697a9f59522a
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746778972395
+status: 3
+tags: []
+user_id: Maxime

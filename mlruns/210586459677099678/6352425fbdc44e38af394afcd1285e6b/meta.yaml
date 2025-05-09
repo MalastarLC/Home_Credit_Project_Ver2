@@ -1,0 +1,15 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/210586459677099678/6352425fbdc44e38af394afcd1285e6b/artifacts
+end_time: 1746778972138
+entry_point_name: ''
+experiment_id: '210586459677099678'
+lifecycle_stage: active
+run_id: 6352425fbdc44e38af394afcd1285e6b
+run_name: First Run with full data and business cost
+run_uuid: 6352425fbdc44e38af394afcd1285e6b
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1746778789388
+status: 3
+tags: []
+user_id: Maxime
