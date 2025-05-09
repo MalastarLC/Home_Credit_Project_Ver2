@@ -1,0 +1,30 @@
+# Data files (ignore all CSVs as requested)
+*.csv
+
+# Python virtual environment
+venv/
+.venv/
+env/
+.env/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE/Editor specific files
+.vscode/
+.idea/
+*.DS_Store
+
+# Large generated model files (if you save them and don't use LFS)
+*.pkl
+*.joblib
+*.h5
+
+# MLflow runs (if mlruns is inside your repo and you don't want to track it)
+# mlruns/
