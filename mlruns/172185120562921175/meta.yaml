@@ -1,0 +1,7 @@
+artifact_location: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/172185120562921175
+creation_time: 1747223504710
+experiment_id: '172185120562921175'
+last_update_time: 1747223504710
+lifecycle_stage: active
+name: Baseline Fine Tuning (Baseline is GridSearchCV + Threshold Optimization + 878
+  null features removed)

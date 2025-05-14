@@ -1,0 +1,1 @@
+{'lgbmclassifier__learning_rate': [0.02, 0.04], 'lgbmclassifier__n_estimators': [400, 600], 'lgbmclassifier__num_leaves': [36, 39, 42, 45], 'lgbmclassifier__reg_alpha': [0.1], 'lgbmclassifier__reg_lambda': [0.1], 'lgbmclassifier__subsample': [0.8], 'lgbmclassifier__colsample_bytree': [0.8], 'lgbmclassifier__min_child_samples': [20]}
