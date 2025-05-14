@@ -1,0 +1,16 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/138144913610308502/85a54bc91d73460597eb049a8b278197/artifacts
+end_time: 1747217851271
+entry_point_name: ''
+experiment_id: '138144913610308502'
+lifecycle_stage: active
+run_id: 85a54bc91d73460597eb049a8b278197
+run_name: Sixth Run with full data and business cost and GridSearchCV and threshold
+  optimization and 0 importance feature removed AGAIN
+run_uuid: 85a54bc91d73460597eb049a8b278197
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747215412084
+status: 3
+tags: []
+user_id: Maxime
