@@ -1,0 +1,16 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/138144913610308502/f21fdd62edfd4358b4d8280afb7fa3c0/artifacts
+end_time: 1747206006455
+entry_point_name: ''
+experiment_id: '138144913610308502'
+lifecycle_stage: active
+run_id: f21fdd62edfd4358b4d8280afb7fa3c0
+run_name: Third Run with full data and business cost and GridSearchCV and threshold
+  optimization
+run_uuid: f21fdd62edfd4358b4d8280afb7fa3c0
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747201046526
+status: 3
+tags: []
+user_id: Maxime
