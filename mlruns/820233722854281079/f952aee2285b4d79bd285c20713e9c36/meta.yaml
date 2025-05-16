@@ -1,0 +1,15 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/820233722854281079/f952aee2285b4d79bd285c20713e9c36/artifacts
+end_time: 1747380648790
+entry_point_name: ''
+experiment_id: '820233722854281079'
+lifecycle_stage: active
+run_id: f952aee2285b4d79bd285c20713e9c36
+run_name: LogReg_10MostCorrelatedFeatures_MedianImpute_Balanced_TunedThreshold
+run_uuid: f952aee2285b4d79bd285c20713e9c36
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747380644415
+status: 3
+tags: []
+user_id: Maxime

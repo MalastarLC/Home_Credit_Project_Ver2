@@ -1,0 +1,39 @@
+artifact_path: logistic_regression_pipeline
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.11.1
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.3.2
+is_signature_from_type_hint: false
+mlflow_version: 2.22.0
+model_size_bytes: 3843
+model_uuid: ba35b7554dc54d0097e7036ec737c350
+prompts: null
+run_id: 1ee4889af331470f939be991eb9de8c6
+saved_input_example_info:
+  artifact_path: input_example.json
+  pandas_orient: split
+  serving_input_path: serving_input_example.json
+  type: dataframe
+signature:
+  inputs: '[{"type": "long", "name": "DAYS_BIRTH", "required": true}, {"type": "long",
+    "name": "REGION_RATING_CLIENT_W_CITY", "required": true}, {"type": "long", "name":
+    "REGION_RATING_CLIENT", "required": true}, {"type": "double", "name": "DAYS_LAST_PHONE_CHANGE",
+    "required": true}, {"type": "long", "name": "DAYS_ID_PUBLISH", "required": true},
+    {"type": "double", "name": "FLOORSMAX_MEDI", "required": true}, {"type": "double",
+    "name": "FLOORSMAX_AVG", "required": true}, {"type": "double", "name": "EXT_SOURCE_2",
+    "required": true}, {"type": "double", "name": "EXT_SOURCE_1", "required": true},
+    {"type": "double", "name": "EXT_SOURCE_3", "required": true}]'
+  outputs: '[{"type": "long", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-05-16 07:30:32.174750'

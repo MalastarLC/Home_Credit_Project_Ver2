@@ -1,0 +1,15 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/371929656633352767/f2aea31e46aa4c4894a760f4fa2187b2/artifacts
+end_time: 1747380762634
+entry_point_name: ''
+experiment_id: '371929656633352767'
+lifecycle_stage: active
+run_id: f2aea31e46aa4c4894a760f4fa2187b2
+run_name: Application_train_Bureau_Bureau_balance_lightGBM_light
+run_uuid: f2aea31e46aa4c4894a760f4fa2187b2
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747380748698
+status: 3
+tags: []
+user_id: Maxime
