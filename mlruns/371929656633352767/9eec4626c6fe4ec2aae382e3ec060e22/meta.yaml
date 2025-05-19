@@ -1,0 +1,15 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/371929656633352767/9eec4626c6fe4ec2aae382e3ec060e22/artifacts
+end_time: 1747634838947
+entry_point_name: ''
+experiment_id: '371929656633352767'
+lifecycle_stage: active
+run_id: 9eec4626c6fe4ec2aae382e3ec060e22
+run_name: features_manual_and_func_from_first_three
+run_uuid: 9eec4626c6fe4ec2aae382e3ec060e22
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747634778588
+status: 3
+tags: []
+user_id: Maxime

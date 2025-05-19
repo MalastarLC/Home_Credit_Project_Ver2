@@ -1,0 +1,15 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/371929656633352767/1f56740cb09c4c77b4c476ae407dbf4d/artifacts
+end_time: 1747634712796
+entry_point_name: ''
+experiment_id: '371929656633352767'
+lifecycle_stage: active
+run_id: 1f56740cb09c4c77b4c476ae407dbf4d
+run_name: Application_train_Bureau_Bureau_weight_dict_10_times_lightGBM_normal_with_early_stopping_lower_learning_rate
+run_uuid: 1f56740cb09c4c77b4c476ae407dbf4d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747634680075
+status: 3
+tags: []
+user_id: Maxime
