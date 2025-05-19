@@ -1,0 +1,16 @@
+aliases: []
+creation_timestamp: 1747638297779
+current_stage: None
+description: 'LogReg : 10 most correlated features to the target with missing values
+  imputed by median and threshold tuning and class weights dictionnary, ROC AUC :
+  0.718, Accuracy : 0.813'
+last_updated_timestamp: 1747638297809
+name: HomeCredit_Default_Risk_Scoring_Model
+run_id: 5bb2affe346a47c2a35a439299aca8e9
+run_link: null
+source: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/820233722854281079/5bb2affe346a47c2a35a439299aca8e9/artifacts/logistic_regression_pipeline
+status: READY
+status_message: null
+storage_location: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/820233722854281079/5bb2affe346a47c2a35a439299aca8e9/artifacts/logistic_regression_pipeline
+user_id: null
+version: 3
