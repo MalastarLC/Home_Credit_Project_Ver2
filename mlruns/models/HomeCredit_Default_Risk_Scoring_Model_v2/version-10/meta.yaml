@@ -1,0 +1,15 @@
+aliases: []
+creation_timestamp: 1747970605399
+current_stage: None
+description: 'LGBM : Full Data no feature importance correlations removed, GridSearchCV,
+  ThresholdOptimization, BizCost : -13722, ROC AUC : 0.747, Accuracy : 0.863'
+last_updated_timestamp: 1747970605468
+name: HomeCredit_Default_Risk_Scoring_Model_v2
+run_id: f21fdd62edfd4358b4d8280afb7fa3c0
+run_link: null
+source: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/138144913610308502/f21fdd62edfd4358b4d8280afb7fa3c0/artifacts/lightgbm_model
+status: READY
+status_message: null
+storage_location: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/138144913610308502/f21fdd62edfd4358b4d8280afb7fa3c0/artifacts/lightgbm_model
+user_id: null
+version: 10

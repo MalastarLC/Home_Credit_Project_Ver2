@@ -1,0 +1,14 @@
+aliases: []
+creation_timestamp: 1747977834612
+current_stage: None
+description: 'Final version, BizCost : -15166, ROC AUC : 0.762, Accuracy : 0.852'
+last_updated_timestamp: 1747977834704
+name: HomeCredit_Default_Risk_Scoring_Model_v3
+run_id: dc6fb5c5f64e4a90b08ca76d9b962765
+run_link: null
+source: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/448441841985485771/dc6fb5c5f64e4a90b08ca76d9b962765/artifacts/lightgbm_model
+status: READY
+status_message: null
+storage_location: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/448441841985485771/dc6fb5c5f64e4a90b08ca76d9b962765/artifacts/lightgbm_model
+user_id: null
+version: 15

@@ -1,0 +1,1 @@
+{'lgbmclassifier__n_estimators': [100, 250, 400], 'lgbmclassifier__learning_rate': [0.05], 'lgbmclassifier__num_leaves': [41], 'lgbmclassifier__reg_alpha': [0.1], 'lgbmclassifier__reg_lambda': [0.1]}

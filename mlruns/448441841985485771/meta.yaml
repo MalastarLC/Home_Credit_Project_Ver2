@@ -1,0 +1,6 @@
+artifact_location: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/448441841985485771
+creation_time: 1747970671978
+experiment_id: '448441841985485771'
+last_update_time: 1747970671978
+lifecycle_stage: active
+name: Final LightGBM Scoring Model

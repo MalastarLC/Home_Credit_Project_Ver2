@@ -1,0 +1,15 @@
+aliases: []
+creation_timestamp: 1747977832539
+current_stage: None
+description: 'LGBM : manual features created on bureau and bureau balance combined
+  with app_train, ROC AUC : 0.754, Accuracy : 0.693'
+last_updated_timestamp: 1747977832577
+name: HomeCredit_Default_Risk_Scoring_Model_v3
+run_id: a40889e2b22a406e889c572d282bce2a
+run_link: null
+source: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/371929656633352767/a40889e2b22a406e889c572d282bce2a/artifacts/lightgbm_model
+status: READY
+status_message: null
+storage_location: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/371929656633352767/a40889e2b22a406e889c572d282bce2a/artifacts/lightgbm_model
+user_id: null
+version: 4

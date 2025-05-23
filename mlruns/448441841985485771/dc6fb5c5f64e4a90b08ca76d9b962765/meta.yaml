@@ -1,0 +1,15 @@
+artifact_uri: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/448441841985485771/dc6fb5c5f64e4a90b08ca76d9b962765/artifacts
+end_time: 1747971246401
+entry_point_name: ''
+experiment_id: '448441841985485771'
+lifecycle_stage: active
+run_id: dc6fb5c5f64e4a90b08ca76d9b962765
+run_name: Model to put into production
+run_uuid: dc6fb5c5f64e4a90b08ca76d9b962765
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1747970672419
+status: 3
+tags: []
+user_id: Maxime

@@ -1,0 +1,15 @@
+aliases: []
+creation_timestamp: 1747970606204
+current_stage: None
+description: 'LGBM : hyperparameters optimization from the baseline, BizCost : -15004,
+  ROC AUC : 0.759, Accuracy : 0.863'
+last_updated_timestamp: 1747970606289
+name: HomeCredit_Default_Risk_Scoring_Model_v2
+run_id: 93c821aded144670ba1c054179455a29
+run_link: null
+source: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/172185120562921175/93c821aded144670ba1c054179455a29/artifacts/lightgbm_model
+status: READY
+status_message: null
+storage_location: file:///c:/Users/Maxime/Desktop/Homre_Credit_Project_Ver2/Home_Credit_Project_Ver2/mlruns/172185120562921175/93c821aded144670ba1c054179455a29/artifacts/lightgbm_model
+user_id: null
+version: 13
