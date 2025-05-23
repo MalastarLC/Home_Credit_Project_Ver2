@@ -176,7 +176,11 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     bureau_balance_loan_duration_months.rename(columns = {'MONTHS_BALANCE' : 'MONTHS_LOAN_DURATION'}, inplace=True)
 
     bureau_balance_last_known_loan_status = bureau_balance.sort_values(by='MONTHS_BALANCE', ascending=False).groupby('SK_ID_BUREAU').first().reset_index()[['SK_ID_BUREAU', 'STATUS']]
-    bureau_balance_last_known_loan_status = pd.get_dummies(bureau_balance_last_known_loan_status, dtype=int)
+    #bureau_balance_last_known_loan_status = pd.get_dummies(bureau_balance_last_known_loan_status, dtype=int)
+    all_expected_status_categories = ['0', '1', '2', '3', '4', '5', 'C', 'X'] # These are the raw STATUS values
+    for cat_col_name in all_expected_status_categories:
+        if cat_col_name not in bureau_balance_last_known_loan_status.columns:
+            bureau_balance_last_known_loan_status[cat_col_name] = 0
 
     bureau_balance_for_dpd_flag = bureau_balance.copy()
     non_dpd_statuses = ['C', 'X', '0']
@@ -213,7 +217,7 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
 
     merge_function = lambda left_df, right_df: pd.merge(left_df, right_df, on=merge_key, how='inner')
     final_bureau_balance_features = reduce(merge_function, dfs_to_merge)
-    final_bureau_balance_features = final_bureau_balance_features.drop(columns=['0', 'C', 'X'])
+    #final_bureau_balance_features = final_bureau_balance_features.drop(columns=['0', 'C', 'X'])
 
 
     bureau_for_credit_status = bureau.copy()
@@ -284,9 +288,20 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
 
     ids_for_agg = bureau[['SK_ID_CURR', 'SK_ID_BUREAU']]
     final_bureau_balance_features_with_curr = pd.merge(left=ids_for_agg, right=final_bureau_balance_features, how='inner')
+    all_expected_status_categories = ['0', '1', '2', '3', '4', '5', 'C', 'X'] # These are the raw STATUS values
+    for cat_col_name in all_expected_status_categories:
+        if cat_col_name not in final_bureau_balance_features_with_curr.columns:
+            final_bureau_balance_features_with_curr[cat_col_name] = 0
     final_bureau_balance_features_with_curr_mean = final_bureau_balance_features_with_curr.groupby('SK_ID_CURR')[['MONTHS_LOAN_DURATION', 'DPD_FLAG', '1', '2', '3', '4', '5', 'MEAN_DAYS_PAST_DUE', 'YEAR_LOAN_DURATION']].mean().reset_index()
     rename_mean_dict = {col: 'MEAN_' + str(col) for col in final_bureau_balance_features_with_curr_mean.columns if col != 'SK_ID_CURR'}
     final_bureau_balance_features_with_curr_mean.rename(columns=rename_mean_dict, inplace=True)
+
+
+
+    all_expected_status_categories = ['STATUS_0','STATUS_1', 'STATUS_2', 'STATUS_3', 'STATUS_4', 'STATUS_5', 'STATUS_C','STATUS_X'] # These are the raw STATUS values
+    for cat_col_name in all_expected_status_categories:
+        if cat_col_name not in final_bureau_balance_features_with_curr.columns:
+            final_bureau_balance_features_with_curr[cat_col_name] = 0
 
     final_bureau_balance_features_with_curr_sum = final_bureau_balance_features_with_curr.groupby('SK_ID_CURR')[['STATUS_0','STATUS_1', 'STATUS_2', 'STATUS_3', 'STATUS_4', 'STATUS_5', 'STATUS_C','STATUS_X', 'DPD_FLAG', '1', '2', '3', '4', '5', 'LOAN_TYPE_Long Term', 'LOAN_TYPE_Short Term']].sum().reset_index()
     rename_sum_dict = {col: 'SUM_' + str(col) for col in final_bureau_balance_features_with_curr_sum.columns if col != 'SK_ID_CURR'}
@@ -296,7 +311,7 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     features_bureau_bureau_balance = pd.merge(left=final_bureau_features, right=final_bureau_balance_features_with_curr_agg, how='inner', on='SK_ID_CURR')
 
     application_train_with_bureau_and_bureau_balance = pd.merge(left=current_app, right=features_bureau_bureau_balance, how='left', on='SK_ID_CURR')
-    application_train_with_bureau_and_bureau_balance[['Active', 'Bad debt', 'Closed', 'Sold',
+    """application_train_with_bureau_and_bureau_balance[['Active', 'Bad debt', 'Closed', 'Sold',
        'CREDIT_TYPE_Another type of loan', 'CREDIT_TYPE_Car loan',
        'CREDIT_TYPE_Cash loan (non-earmarked)', 'CREDIT_TYPE_Consumer credit',
        'CREDIT_TYPE_Credit card', 'CREDIT_TYPE_Interbank credit',
@@ -336,7 +351,7 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
        'SUM_STATUS_5', 'SUM_STATUS_C', 'SUM_STATUS_X', 'SUM_DPD_FLAG', 'SUM_1',
        'SUM_2', 'SUM_3', 'SUM_4', 'SUM_5', 'SUM_LOAN_TYPE_Long Term',
        'SUM_LOAN_TYPE_Short Term']
-    application_train_with_bureau_and_bureau_balance[cols_to_fill] = application_train_with_bureau_and_bureau_balance[cols_to_fill].fillna(value=0)
+    application_train_with_bureau_and_bureau_balance[cols_to_fill] = application_train_with_bureau_and_bureau_balance[cols_to_fill].fillna(value=0)"""
 
     
     # Création des features à l'aide des deux fonctions d'aggrégation
@@ -425,38 +440,64 @@ def predicting_scores(full_data):
         model_info = mlflow.models.get_model_info(pipeline_model_uri) # Fetches metadata about the logged model
 
         if model_info.signature is not None and model_info.signature.inputs is not None:
-            input_schema = model_info.signature.inputs #Accesses the input part of the model signature
+            input_schema_obj = model_info.signature.inputs #Accesses the input part of the model signature
+            #print(f"DEBUG: Input schema type: {type(input_schema)}") # Add this
+            #print(f"DEBUG: Input schema content: {input_schema.to_dict()}") # Add this
             # The schema can be a ColSpec, TensorSpec, or DataFrame. For pandas DataFrames,
             # it's often a 'pandas.DataFrame' type in the schema.
             # If it's a pandas DataFrame schema, we can extract column names.
-            if input_schema.is_dataframe():
-                expected_input_columns = [spec.name for spec in input_schema.to_list()] # .name returns le nom de la series
-                print("\nExpected input columns for the pipeline (from signature):")
-                print(expected_input_columns)
-
-                # SAving this list is possible
-                # with open('pipeline_input_columns.txt', 'w') as f:
-                #     for col_name in expected_input_columns:
-                #         f.write(f"{col_name}\n")
-                # print("Expected input columns saved to pipeline_input_columns.txt")
-
+            if hasattr(input_schema_obj, 'input_names') and callable(getattr(input_schema_obj, 'input_names')):
+                expected_input_columns = input_schema_obj.input_names()
+                print("\nExpected input columns for the pipeline (from signature via input_names()):")
+                # print(expected_input_columns) # Keep commented or print selectively
+            elif hasattr(input_schema_obj, 'inputs') and isinstance(input_schema_obj.inputs, list): # Alternative for older MLflow or different schema structure
+                expected_input_columns = [col_spec.name for col_spec in input_schema_obj.inputs]
+                print("\nExpected input columns for the pipeline (from signature via iterating inputs):")
+                # print(expected_input_columns)
             else:
-                print("\nInput schema is not in the expected pandas DataFrame format.")
-                print("Input Schema:", input_schema.to_dict()) # Print schema for inspection
+                print("\nCould not extract column names from input schema. Schema details:")
+                print(str(input_schema_obj)[:1000]) # Print some details of the schema object
                 expected_input_columns = None
         else:
-            print("\nNo input signature found for the logged pipeline.")
-            print("Ensure 'input_example' was provided correctly during 'mlflow.sklearn.log_model'.")
+            print("\nNo input signature or inputs found in model_info.")
             expected_input_columns = None
-
-    except Exception as e:
-        print(f"Error fetching model info or signature: {e}")
+    except AttributeError as ae:
+        print(f"AttributeError while processing MLflow signature: {ae}")
+        print("This might indicate an unexpected schema structure or MLflow version issue.")
         expected_input_columns = None
+    except Exception as e:
+        print(f"Error fetching model info or signature from MLflow: {e}")
+        expected_input_columns = None
+
+    # --- ROBUST FALLBACK (as before) ---
+    if expected_input_columns is None:
+        # ... (your existing robust fallback to load from pipeline_input_columns.txt) ...
+        # ... ensure this part correctly raises an error if the file is bad or missing ...
+        print("WARNING: Could not load expected_input_columns from MLflow signature. Attempting to load from 'pipeline_input_columns.txt'")
+        try:
+            with open('pipeline_input_columns.txt', 'r') as f:
+                loaded_cols = [line.strip() for line in f if line.strip()]
+            if not loaded_cols:
+                raise ValueError("pipeline_input_columns.txt is empty or contains no valid column names.")
+            expected_input_columns = loaded_cols
+            print(f"Successfully loaded {len(expected_input_columns)} expected input columns from pipeline_input_columns.txt")
+        except FileNotFoundError:
+            print("ERROR: pipeline_input_columns.txt not found. This file is required as a fallback if MLflow signature fails.")
+            raise 
+        except ValueError as ve:
+            print(f"ERROR loading from pipeline_input_columns.txt: {ve}")
+            raise 
+    
+    if expected_input_columns is None:
+        print("CRITICAL ERROR: expected_input_columns is still None after all loading attempts. Cannot proceed.")
+        raise ValueError("Failed to obtain expected input columns for the model.")
+
+    expected_columns_set = set(expected_input_columns)
 
     # Chargement du pipeline pour récupérer le scaler
     loaded_pipeline = mlflow.sklearn.load_model(pipeline_model_uri) # Pour load le scaler c'est différent on ne charge pas le modèle mais le pipeline
     print("\nPipeline loaded successfully.")
-    previously_fitted_scaler = loaded_pipeline.named_steps['scaler']
+    previously_fitted_scaler = loaded_pipeline.named_steps['standardscaler']
     print("\nScaler object extracted from the pipeline.")
 
     # Nettoyage des noms de colonnes avant sinon on risque de tout supprimer à l'étape d'après
@@ -467,7 +508,7 @@ def predicting_scores(full_data):
     print("Column names sanitized")
 
     # Save SK_ID_CURR before dropping the columns
-    SK_ID_CURR_current_app_batch = full_data["SK_ID_CURR"]
+    SK_ID_CURR_current_app_batch = full_data["SK_ID_CURR"].copy()
 
     # Selecting and creating columns to match expected input
     current_columns = set(full_data.columns)
@@ -499,11 +540,11 @@ def predicting_scores(full_data):
     print("Probabilities predicted successfully.")
 
     current_app_scores = current_app_scores*100
-    print(current_app_scores[:25]) # Print first 25 scores
+    print(current_app_scores[:5]) # Print first 5 scores
 
     optimal_threshold = 0.6336 * 100
     scores_DataFrame = pd.DataFrame({'SCORE': current_app_scores}, index=SK_ID_CURR_current_app_batch.index) # On rajoute le nom SCORE pour le mask apres et on fait index = pour na pas avoir de soucis sur le .concat
-    client_with_scores = pd.concat(SK_ID_CURR_current_app_batch, scores_DataFrame, axis=1)
+    client_with_scores = pd.concat([SK_ID_CURR_current_app_batch, scores_DataFrame], axis=1)
     likely_to_repay = client_with_scores[client_with_scores['SCORE'] < optimal_threshold]
     print(likely_to_repay.head())
     not_likely_to_repay = client_with_scores[client_with_scores['SCORE'] >= optimal_threshold]

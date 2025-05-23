@@ -1,0 +1,10 @@
+pandas
+numpy
+mlflow
+scikit-learn
+flask
+re
+functools
+lightgbm
+logging
+requests
