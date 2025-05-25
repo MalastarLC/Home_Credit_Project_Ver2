@@ -99,6 +99,12 @@ jobs:
         run: |
           pytest
 
+      # --- ADD THIS STEP TO INSTALL HEROKU CLI ---
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+      # --- END HEROKU CLI INSTALLATION ---
+
       # --- Deployment to Heroku ---
       # This step will only run if the current event is a push to the 'main' branch
       # AND all previous steps in this job (like tests) have succeeded.
