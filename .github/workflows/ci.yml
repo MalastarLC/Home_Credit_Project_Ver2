@@ -1,6 +1,6 @@
 # .github/workflows/ci.yml
 
-name: Python CI # Just for Continuous Integration (testing)
+name: Python CI # Just for Continuous Integration (testing) tets
 
 on:
   push:
