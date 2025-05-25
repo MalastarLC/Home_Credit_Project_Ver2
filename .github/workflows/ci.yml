@@ -67,3 +67,50 @@ jobs:
           pytest  # This command will execute pytest
                   # Pytest will automatically discover tests in your 'tests/' directory
                   # You can add options like -v for verbose output: pytest -v
+
+  build-test-deploy: # You can keep one job or split into build/test and deploy
+    runs-on: ubuntu-latest
+    env:
+      HEROKU_APP_NAME: "maxime-credit-scorer-api" # !!! REPLACE with YOUR Heroku app name !!!
+
+    strategy:
+      matrix:
+        python-version: ['3.11.1'] # !!! MATCH your runtime.txt EXACTLY !!!
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history for all branches and tags, required by some deploy actions
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # No need to install pytest here if it's in requirements.txt for testing
+
+      - name: Run Pytests
+        run: |
+          pytest
+
+      # --- Deployment to Heroku ---
+      # This step will only run if the current event is a push to the 'main' branch
+      # AND all previous steps in this job (like tests) have succeeded.
+      - name: Deploy to Heroku
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
+        uses: akhileshns/heroku-deploy@v3.13.15 # A popular community action for Heroku deployment
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ env.HEROKU_APP_NAME }} # Uses the env var defined above
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          # Optional:
+          # healthcheck: "https://${{ env.HEROKU_APP_NAME }}.herokuapp.com/some-health-check-endpoint" # If you have one
+          # delay: 15 # Delay after deploy before healthcheck
+          # rollbackonhealthcheckfailed: true
+          # usedocker: false # Set to true if you were deploying a Docker image instead of Git push
