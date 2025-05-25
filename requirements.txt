@@ -8,3 +8,4 @@ functools
 lightgbm
 logging
 requests
+pytest
