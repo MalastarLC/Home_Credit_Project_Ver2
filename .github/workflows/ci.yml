@@ -1,68 +1,39 @@
 # .github/workflows/ci.yml
 
-name: Python CI and Heroku Deployment # Renamed for clarity
+name: Python CI # Just for Continuous Integration (testing)
 
 on:
   push:
     branches:
-      - main      # Trigger on pushes to the main branch
+      - main
+      - develop
   pull_request:
     branches:
-      - main      # Also run tests on PRs to main (won't deploy)
+      - main
+      - develop
 
 jobs:
-  test_and_deploy: # A single job for testing and conditional deployment
+  test: # Job just for testing
     runs-on: ubuntu-latest
-
-    env: # Environment variables accessible throughout this job
-      HEROKU_APP_NAME: "maxime-credit-scorer-api" # !!! YOUR ACTUAL HEROKU APP NAME !!!
-      PYTHON_VERSION: '3.11.1' # Define Python version once, ensure it matches runtime.txt
+    env:
+      PYTHON_VERSION: '3.11.1' # Match your runtime.txt
 
     steps:
-      # Step 1: Check out your repository code #up
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Required for some deployment strategies
+        # fetch-depth: 0 is not strictly needed if only testing
 
-      # Step 2: Set up the specified Python version
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
-      # Step 3: Install project dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt # Ensure pytest and gunicorn are in here
+          pip install -r requirements.txt # Ensure pytest is in here
 
-      # Step 4: Run your Pytest unit tests
       - name: Run Pytests
         run: |
           pytest
-
-      # Step 5: Install Heroku CLI (Only if deploying)
-      # This step only runs if the event is a push to main AND tests (previous steps) passed
-      - name: Install Heroku CLI
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
-        run: |
-          curl https://cli-assets.heroku.com/install.sh | sh
-          echo "Heroku CLI installed."
-
-      # Step 6: Deploy to Heroku
-      # This step only runs if the event is a push to main AND tests (previous steps) passed
-      - name: Deploy to Heroku
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
-        uses: akhileshns/heroku-deploy@v3.13.15
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ env.HEROKU_APP_NAME }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          # The action should handle setting the remote.
-          # Remove any manual 'heroku git:remote' step.
-          # common parameters (check action's documentation if needed):
-          # branch: "main" # branch to push to heroku, defaults to current branch (main in this case)
-          # healthcheck: "https://<your-app-name>.herokuapp.com/" # Optional healthcheck URL
-          # appdir: "." # If your app is in the root, otherwise specify subdirectory
