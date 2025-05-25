@@ -38,7 +38,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip' # Optional: Caches pip dependencies to speed up subsequent runs
+          cache: 'pip' # Optional: Caches pip dependencies to speed up subsequent runs #1
 
       # Step 3: Install project dependencies (and pytest)
       - name: Install dependencies
