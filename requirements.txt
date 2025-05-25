@@ -3,7 +3,6 @@ numpy
 mlflow
 scikit-learn
 flask
-functools
 lightgbm
 logging
 requests
