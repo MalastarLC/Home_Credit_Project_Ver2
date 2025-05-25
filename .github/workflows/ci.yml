@@ -1,137 +1,68 @@
 # .github/workflows/ci.yml
 
-name: Python Project CI # A descriptive name for your workflow
+name: Python CI and Heroku Deployment # Renamed for clarity
 
-# 1. Define when the workflow should run (triggers)
 on:
-  push: # Run on every push event
+  push:
     branches:
-      - main      # Run when pushing to the 'main' branch
-      - develop   # Also run when pushing to a 'develop' branch (if you use one)
-      # You can add more branches or use wildcards like 'feature/*'
-  pull_request: # Run when a pull request is opened or updated
+      - main      # Trigger on pushes to the main branch
+  pull_request:
     branches:
-      - main      # Targeting the 'main' branch
-      - develop   # Targeting the 'develop' branch
+      - main      # Also run tests on PRs to main (won't deploy)
 
-# 2. Define the jobs to be executed
 jobs:
-  build-and-test: # You can name this job anything descriptive
-    # 3. Specify the runner environment
-    runs-on: ubuntu-latest # Use a GitHub-hosted Linux runner (common and free for public repos)
-                           # Other options include 'windows-latest' or 'macos-latest'
+  test_and_deploy: # A single job for testing and conditional deployment
+    runs-on: ubuntu-latest
 
-    # 4. (Optional) Define a strategy for running on multiple Python versions #test again
-    strategy:
-      matrix:
-        python-version: ['3.11'] # Specify the Python version(s) you want to test against
-                                 # If your project supports multiple, list them: ['3.9', '3.10', '3.11']
+    env: # Environment variables accessible throughout this job
+      HEROKU_APP_NAME: "maxime-credit-scorer-api" # !!! YOUR ACTUAL HEROKU APP NAME !!!
+      PYTHON_VERSION: '3.11.1' # Define Python version once, ensure it matches runtime.txt
 
-    # 5. Define the sequence of steps for the job
     steps:
       # Step 1: Check out your repository code
       - name: Checkout repository
-        uses: actions/checkout@v4 # Uses a pre-built GitHub Action to get your code 
-
-      # Step 2: Set up the specified Python version
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip' # Optional: Caches pip dependencies to speed up subsequent runs #1
-
-      # Step 3: Install project dependencies (and pytest)
-      - name: Install dependencies
-        run: | # 'run' allows you to execute shell commands
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          # If pytest is not in requirements.txt, install it explicitly:
-          # pip install pytest
-          # If you use a separate dev requirements file:
-          # pip install -r requirements-dev.txt
-
-      # Step 4: (Optional but Recommended) Run a linter
-      # Linters check your code for style issues and potential errors
-      # - name: Lint with Flake8 (example)
-      #   run: |
-      #     pip install flake8
-      #     # Stop the build if there are Python syntax errors or undefined names
-      #     flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      #     # exit-zero treats all errors as warnings. Use wisely.
-      #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      #     echo "Linting complete (if Flake8 was run)"
-
-      # Step 5: Run your Pytest unit tests
-      - name: Run Pytests
-        run: |
-          pytest  # This command will execute pytest
-                  # Pytest will automatically discover tests in your 'tests/' directory
-                  # You can add options like -v for verbose output: pytest -v
-
-  build-test-deploy: # You can keep one job or split into build/test and deploy
-    runs-on: ubuntu-latest
-    env:
-      HEROKU_APP_NAME: "maxime-credit-scorer-api" # !!! REPLACE with YOUR Heroku app name !!!
-
-    strategy:
-      matrix:
-        python-version: ['3.11.1'] # !!! MATCH your runtime.txt EXACTLY !!!
-
-    steps:
-      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetches all history for all branches and tags, required by some deploy actions
+          fetch-depth: 0 # Required for some deployment strategies
 
-      - name: Set up Python ${{ matrix.python-version }}
+      # Step 2: Set up the specified Python version
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
+      # Step 3: Install project dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          # No need to install pytest here if it's in requirements.txt for testing
+          pip install -r requirements.txt # Ensure pytest and gunicorn are in here
 
+      # Step 4: Run your Pytest unit tests
       - name: Run Pytests
         run: |
           pytest
 
-      # --- ADD THIS STEP TO INSTALL HEROKU CLI ---
+      # Step 5: Install Heroku CLI (Only if deploying)
+      # This step only runs if the event is a push to main AND tests (previous steps) passed
       - name: Install Heroku CLI
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
-      # --- END HEROKU CLI INSTALLATION ---
+          echo "Heroku CLI installed."
 
-      # --- ADD THIS STEP TO CONFIGURE HEROKU GIT REMOTE ---
-      - name: Add Heroku Git Remote
-        # This step assumes heroku login was successful in the deploy step,
-        # or that the CLI can infer the app from HEROKU_APP_NAME after login via API key.
-        # The akhileshns/heroku-deploy action itself should handle login and remote setup,
-        # but this is a fallback if it's not working.
-        # It might be better to let akhileshns/heroku-deploy handle this.
-        # However, if it consistently fails to set the remote, you can try:
-        run: |
-          heroku git:remote -a ${{ env.HEROKU_APP_NAME }}
-        # This command adds a remote named 'heroku' pointing to your app.
-        # It requires the Heroku CLI to be logged in, which the akhileshns/heroku-deploy action
-        # should do using your API key.
-      # --- END HEROKU GIT REMOTE CONFIGURATION ---
-      
-      # --- Deployment to Heroku ---
-      # This step will only run if the current event is a push to the 'main' branch
-      # AND all previous steps in this job (like tests) have succeeded.
+      # Step 6: Deploy to Heroku
+      # This step only runs if the event is a push to main AND tests (previous steps) passed
       - name: Deploy to Heroku
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success()
-        uses: akhileshns/heroku-deploy@v3.13.15 # A popular community action for Heroku deployment
+        uses: akhileshns/heroku-deploy@v3.13.15
         with:
           heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ env.HEROKU_APP_NAME }} # Uses the env var defined above
+          heroku_app_name: ${{ env.HEROKU_APP_NAME }}
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          # Optional:
-          # healthcheck: "https://${{ env.HEROKU_APP_NAME }}.herokuapp.com/some-health-check-endpoint" # If you have one
-          # delay: 15 # Delay after deploy before healthcheck
-          # rollbackonhealthcheckfailed: true
-          # usedocker: false # Set to true if you were deploying a Docker image instead of Git push
+          # The action should handle setting the remote.
+          # Remove any manual 'heroku git:remote' step.
+          # common parameters (check action's documentation if needed):
+          # branch: "main" # branch to push to heroku, defaults to current branch (main in this case)
+          # healthcheck: "https://<your-app-name>.herokuapp.com/" # Optional healthcheck URL
+          # appdir: "." # If your app is in the root, otherwise specify subdirectory
