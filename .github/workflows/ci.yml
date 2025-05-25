@@ -105,6 +105,21 @@ jobs:
           curl https://cli-assets.heroku.com/install.sh | sh
       # --- END HEROKU CLI INSTALLATION ---
 
+      # --- ADD THIS STEP TO CONFIGURE HEROKU GIT REMOTE ---
+      - name: Add Heroku Git Remote
+        # This step assumes heroku login was successful in the deploy step,
+        # or that the CLI can infer the app from HEROKU_APP_NAME after login via API key.
+        # The akhileshns/heroku-deploy action itself should handle login and remote setup,
+        # but this is a fallback if it's not working.
+        # It might be better to let akhileshns/heroku-deploy handle this.
+        # However, if it consistently fails to set the remote, you can try:
+        run: |
+          heroku git:remote -a ${{ env.HEROKU_APP_NAME }}
+        # This command adds a remote named 'heroku' pointing to your app.
+        # It requires the Heroku CLI to be logged in, which the akhileshns/heroku-deploy action
+        # should do using your API key.
+      # --- END HEROKU GIT REMOTE CONFIGURATION ---
+      
       # --- Deployment to Heroku ---
       # This step will only run if the current event is a push to the 'main' branch
       # AND all previous steps in this job (like tests) have succeeded.
