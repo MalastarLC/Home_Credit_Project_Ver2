@@ -8,7 +8,7 @@ import os
 
 # API endpoint URL
 #API_URL = "http://localhost:5001/predict" # Make sure port matches api.py
-API_URL = "https://maxime-credit-api-v2-057d90a74f6b.herokuapp.com/" #New 
+API_URL = "https://maxime-scorer-api-v3-b70c48541b06.herokuapp.com/" #New 
 
 output_dir = "api_results"
 os.makedirs(output_dir, exist_ok=True)

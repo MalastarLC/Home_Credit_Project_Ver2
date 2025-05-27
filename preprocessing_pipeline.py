@@ -405,10 +405,10 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     print("\nDataset was properly aggregated.")
 
     return full_data
-
+"""
 def predicting_scores(full_data):
 
-    """
+    #remettre docstring ici
     Uses the preprocessed data to predict wether or not a client is likely to repay the loan they applied for.
     
     Parameters
@@ -423,8 +423,8 @@ def predicting_scores(full_data):
         likely_to_repay(dataframe) containing all of the SK_ID_CURR with a score strictly below the optimal threshold, 
         not_likely_to_repay(dataframe) containing all of the SK_ID_CURR with a score equal or above the optimal threshold
     
-    """
-
+    #remettre docstring ici
+    
     # Loading from MLflow
     run_id_of_the_pipeline = "dc6fb5c5f64e4a90b08ca76d9b962765"
     pipeline_artifact_path = "full_lgbm_pipeline"
@@ -550,4 +550,53 @@ def predicting_scores(full_data):
     not_likely_to_repay = client_with_scores[client_with_scores['SCORE'] >= optimal_threshold]
     print(not_likely_to_repay.head())
     
+    
     return client_with_scores, likely_to_repay, not_likely_to_repay
+    """
+
+    # --- START OF DUMMY MODEL predicting_scores ---
+def predicting_scores(full_data):
+    """
+    DUMMY MODEL VERSION: Returns random scores for testing deployment stability.
+    """
+    print("--- EXECUTING DUMMY predicting_scores ---")
+
+    # Handle empty full_data before processing
+    if full_data.empty:
+        print("WARNING: full_data received by predicting_scores is empty (DUMMY). Returning empty results.")
+        empty_scores_df = pd.DataFrame(columns=['SK_ID_CURR', 'SCORE'])
+        return empty_scores_df, empty_scores_df.copy(), empty_scores_df.copy()
+
+    # Try to get SK_ID_CURR, use placeholder if not available
+    sk_id_curr_sanitized_name = sanitize_lgbm_colname("SK_ID_CURR")
+    if sk_id_curr_sanitized_name in full_data.columns:
+        SK_ID_CURR_current_app_batch = full_data[sk_id_curr_sanitized_name].copy()
+    elif "SK_ID_CURR" in full_data.columns: # Check original name if sanitized one not found
+        SK_ID_CURR_current_app_batch = full_data["SK_ID_CURR"].copy()
+    else:
+        print(f"WARNING (DUMMY): Column '{sk_id_curr_sanitized_name}' or 'SK_ID_CURR' not found in full_data. Using placeholder index.")
+        SK_ID_CURR_current_app_batch = pd.Series(range(len(full_data)), name="SK_ID_CURR_placeholder")
+
+    print(f"Simulating predictions for {len(full_data)} clients (DUMMY).")
+    # Generate random scores between 0 and 100
+    dummy_scores = np.random.rand(len(full_data)) * 100
+    
+    optimal_threshold = 63.36 # Dummy threshold (0.6336 * 100)
+
+    client_with_scores = pd.DataFrame({
+        SK_ID_CURR_current_app_batch.name: SK_ID_CURR_current_app_batch.values,
+        'SCORE': dummy_scores
+    })
+    
+    # If placeholder was used, try to rename it to a standard SK_ID_CURR (sanitized)
+    if client_with_scores.columns[0] == "SK_ID_CURR_placeholder":
+        client_with_scores.rename(columns={"SK_ID_CURR_placeholder": sk_id_curr_sanitized_name}, inplace=True)
+    
+    likely_to_repay = client_with_scores[client_with_scores['SCORE'] < optimal_threshold].copy()
+    not_likely_to_repay = client_with_scores[client_with_scores['SCORE'] >= optimal_threshold].copy()
+    
+    print("Dummy scores generated successfully.")
+    print("Sample client_with_scores (DUMMY):\n", client_with_scores.head())
+    
+    return client_with_scores, likely_to_repay, not_likely_to_repay
+# --- END OF DUMMY MODEL predicting_scores ---
