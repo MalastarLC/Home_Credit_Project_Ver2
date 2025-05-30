@@ -84,12 +84,12 @@ def predict():
         app.logger.error(f"An unexpected error occurred during prediction: {str(e)}", exc_info=True)
         return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
-if __name__ == '__main__': # Ce bloc de code n'ext exécuté que si je run le script depuis le cmd(pr développement local et testing)
+#if __name__ == '__main__':
     # Make sure MLFLOW_TRACKING_URI is set in your environment if not using default ./mlruns
     # e.g., export MLFLOW_TRACKING_URI=http://localhost:5000
     # Or, set it in Python code (less ideal for prod):
     # mlflow.set_tracking_uri("file:./mlruns") # or your server URI
 
-    app.run(host='0.0.0.0', port=5001, debug=True) # debug=False for production
+#    app.run(host='0.0.0.0', port=5001, debug=True) # debug=False for production
 
 # --- END OF FILE API_Script.py ---

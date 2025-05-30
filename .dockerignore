@@ -1,0 +1,61 @@
+# --- Version Control ---
+.git
+.github # Workflows and GitHub specific files, not needed in the image
+
+# --- Python Virtual Environment ---
+venv
+.venv
+env
+ENV # Common names for virtual environments
+
+# --- Python Cache & Compiled Files ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Test Related ---
+.pytest_cache/
+tests/ # Your test scripts are not needed for the running API
+
+# --- Output/Result Directories from Local Runs ---
+# (Your API will generate results, but these are local dev outputs)
+api_results/
+
+# --- Data Files ---
+# Your API receives data via JSON post, it doesn't read from these in production
+# You mentioned .gitignore already handles these, but good to be explicit in .dockerignore too
+data/
+*.csv # This will ignore features_manual_and_func_from_first_three_with_app_train.csv (597MB!)
+      # and any other CSVs. pipeline_input_columns.txt is a .txt so it's safe.
+
+# --- Image/Plot Outputs from Notebooks/Analysis ---
+*.png # Ignores confusion_matrix_*.png
+*.jpg
+*.jpeg
+*.svg
+
+# --- Jupyter Notebooks ---
+# Not needed for the running API
+*.ipynb
+
+# --- OS-specific files (macOS, Windows) ---
+.DS_Store
+Thumbs.db
+
+# --- Temporary or local configuration files / Junk ---
+Nouveau document texte.txt # If this is an empty or temp file
+
+# --- Editor/IDE specific folders (add if you use them) ---
+# .vscode/
+# .idea/
+
+# --- Heroku specific files (not strictly needed by Docker if Dockerfile is complete) ---
+Procfile
+runtime.txt
+
+# --- Other common ignores ---
+*.log # If you generate local log files not part of the app's runtime logging
+*.tmp
+*.swp # Swap files from editors like Vim
+# .env # If you were using a .env file for local secrets (not visible here)

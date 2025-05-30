@@ -5,13 +5,15 @@ import pandas as pd
 import numpy as np
 import json
 import os
+import traceback
 
 # API endpoint URL
-#API_URL = "http://localhost:5001/predict" # Make sure port matches api.py
-API_URL = "https://maxime-scorer-api-v3-b70c48541b06.herokuapp.com/" #New 
+API_URL = "http://localhost:5001/predict" # Make sure port matches api.py
 
 output_dir = "api_results"
 os.makedirs(output_dir, exist_ok=True)
+
+results = {} #Initialisation de results sinon erreur quand on call l'API
 
 # --- Load Sample Data ---
 # Adjust paths and filenames as necessary
@@ -159,23 +161,33 @@ except Exception as e:
         print("Response Text (if available):", response.text)
 
 # --- SAVE RESULTS TO CSV ---
-if 'client_with_scores' in results and results['client_with_scores']:
-    client_scores_df = pd.DataFrame(results['client_with_scores'])
-    output_path_all = os.path.join(output_dir, "client_scores_all.csv")
-    client_scores_df.to_csv(output_path_all, index=False)
-    print(f"\nAll client scores saved to: {output_path_all}")
+if isinstance(results, dict) and 'client_with_scores' in results and results['client_with_scores']:
+    try:
+        client_scores_df = pd.DataFrame(results['client_with_scores'])
+        output_path_all = os.path.join(output_dir, "client_scores_all.csv")
+        client_scores_df.to_csv(output_path_all, index=False)
+        print(f"\nAll client scores saved to: {output_path_all}")
+    except Exception as e_save:
+        print(f"Error saving client_scores_all.csv: {e_save}")
 
-if 'likely_to_repay' in results and results['likely_to_repay']:
-    likely_df = pd.DataFrame(results['likely_to_repay'])
-    output_path_likely = os.path.join(output_dir, "clients_likely_to_repay.csv")
-    likely_df.to_csv(output_path_likely, index=False)
-    print(f"Likely to repay clients saved to: {output_path_likely}")
-    
-if 'not_likely_to_repay' in results and results['not_likely_to_repay']:
-    not_likely_df = pd.DataFrame(results['not_likely_to_repay'])
-    output_path_not_likely = os.path.join(output_dir, "clients_not_likely_to_repay.csv")
-    not_likely_df.to_csv(output_path_not_likely, index=False)
-    print(f"Not likely to repay clients saved to: {output_path_not_likely}")
+
+if isinstance(results, dict) and 'likely_to_repay' in results and results['likely_to_repay']:
+    try:
+        likely_df = pd.DataFrame(results['likely_to_repay'])
+        output_path_likely = os.path.join(output_dir, "clients_likely_to_repay.csv")
+        likely_df.to_csv(output_path_likely, index=False)
+        print(f"Likely to repay clients saved to: {output_path_likely}")
+    except Exception as e_save:
+        print(f"Error saving clients_likely_to_repay.csv: {e_save}")
+
+if isinstance(results, dict) and 'not_likely_to_repay' in results and results['not_likely_to_repay']:
+    try:
+        not_likely_df = pd.DataFrame(results['not_likely_to_repay'])
+        output_path_not_likely = os.path.join(output_dir, "clients_not_likely_to_repay.csv")
+        not_likely_df.to_csv(output_path_not_likely, index=False)
+        print(f"Not likely to repay clients saved to: {output_path_not_likely}")
+    except Exception as e_save:
+        print(f"Error saving clients_not_likely_to_repay.csv: {e_save}")
 
 
 
