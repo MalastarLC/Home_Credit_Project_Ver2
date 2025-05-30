@@ -9,6 +9,7 @@ import traceback
 
 # API endpoint URL
 API_URL = "http://localhost:5001/predict" # Make sure port matches api.py
+# API_URL = "https://credit-scoring-api-p5ym.onrender.com/predict"
 
 output_dir = "api_results"
 os.makedirs(output_dir, exist_ok=True)
@@ -34,7 +35,7 @@ try:
     credit_card_balance_df = pd.read_csv(f"{data_path}credit_card_balance.csv")
     print("Full data loaded successfully.")
 
-    frac_sample = 0.1
+    frac_sample = 0.001
     print(f"Sampling data with fraction: {frac_sample}")
     current_app_df = current_app_df.sample(frac=frac_sample, random_state=42)
     

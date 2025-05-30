@@ -22,7 +22,6 @@ __pycache__/
 *.DS_Store
 
 # Large generated model files (if you save them and don't use LFS)
-*.pkl
 *.joblib
 *.h5
 
