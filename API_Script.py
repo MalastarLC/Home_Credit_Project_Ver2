@@ -17,6 +17,27 @@ logging.basicConfig(level=logging.INFO) # Outputs to console
 
 @app.route('/predict', methods=['POST'])
 def predict():
+
+    # --- MODIFICATION: Runtime Diagnostic ---
+    app.logger.info("--- RUNTIME DIAGNOSTIC ---")
+    app.logger.info(f"Current sys.path: {sys.path}")
+    
+    # Try to find where preprocessing_pipeline was imported from
+    try:
+        import preprocessing_pipeline # Ensure it's imported to get __file__
+        module_path = preprocessing_pipeline.__file__
+        app.logger.info(f"preprocessing_pipeline module was imported from: {module_path}")
+        if os.path.exists(module_path):
+            app.logger.info(f"Content of {module_path} (first 300 chars):")
+            with open(module_path, 'r') as f_content:
+                app.logger.info(f_content.read(300))
+        else:
+            app.logger.error(f"Module path {module_path} does not exist!")
+    except Exception as e_diag:
+        app.logger.error(f"Error during runtime diagnostic for preprocessing_pipeline: {e_diag}")
+    app.logger.info("--- END RUNTIME DIAGNOSTIC ---")
+    # --- END MODIFICATION ---
+
     app.logger.info("Received prediction request.")
     if not request.is_json:
         app.logger.error("Request is not JSON.")

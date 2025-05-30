@@ -29,6 +29,14 @@ COPY API_Script.py .
 
 # Copy your preprocessing pipeline script
 COPY preprocessing_pipeline.py .
+# COPY ["C:\\Users\\Maxime\\Desktop\\Homre_Credit_Project_Ver2\\Home_Credit_Project_Ver2\\preprocessing_pipeline.py", "/app/preprocessing_pipeline.py"]
+
+# --- MODIFICATION: Print the content of the copied file during build ---
+RUN echo ">>>> CHECKING FOR PYC FILES for preprocessing_pipeline <<<<" && \
+    ls -la /app/__pycache__/preprocessing_pipeline*.pyc || echo "No pyc found" && \
+    ls -la /app/preprocessing_pipeline*.pyc || echo "No pyc found directly in /app" && \
+    echo ">>>> END OF PYC CHECK <<<<"
+# --- END OF MODIFICATION ---
 
 # Copy the MLflow runs directory.
 # CRITICAL: Ensure 'mlruns' is in the same directory as your Dockerfile (your project root)
