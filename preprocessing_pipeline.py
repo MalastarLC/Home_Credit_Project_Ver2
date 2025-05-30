@@ -352,9 +352,18 @@ def predicting_scores(full_data):
 
     """
     print("--- Inside predicting_scores (Per-Request Model Load Version with Path Debugging) ---")
+    # Use print for high visibility during this debug phase
+    print("--- PREDICTING_SCORES_ENTRY_POINT_V2 ---") # New unique marker
 
     run_id_of_the_pipeline = "dc6fb5c5f64e4a90b08ca76d9b962765"
     pipeline_artifact_path = "full_lgbm_pipeline" # This name is confirmed correct
+    pipeline_model_uri = f"runs:/{run_id_of_the_pipeline}/{pipeline_artifact_path}"
+
+    print(f"[PREDICT_SCORES_DEBUG] Current MLflow tracking URI: {mlflow.get_tracking_uri()}")
+    print(f"[PREDICT_SCORES_DEBUG] Constructed MLflow Model URI: {pipeline_model_uri}")
+
+    experiment_id_for_path = "448441841985485771"
+    base_dir_to_check = "/app"
 
     # --- Start of MLflow Path Debugging ---
     current_tracking_uri = mlflow.get_tracking_uri()
