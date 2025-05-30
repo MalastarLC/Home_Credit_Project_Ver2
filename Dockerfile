@@ -10,6 +10,14 @@ FROM python:3.11-slim
 # It's common practice to use /app or /usr/src/app.
 WORKDIR /app
 
+# --- NEW: Install system dependencies for LightGBM ---
+# libgomp1 is needed by LightGBM for OpenMP support.
+# Install it before pip install requirements to ensure LightGBM links correctly if compiled.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libgomp1 && \
+    rm -rf /var/lib/apt/lists/*
+# --- END NEW ---
+
 # --- Stage 3: Copy Requirements and Install Dependencies ---
 # Copy the requirements file first. This is a Docker best practice for caching.
 # If requirements.txt doesn't change, Docker can reuse this layer from a previous build, speeding things up.
@@ -30,6 +38,12 @@ COPY API_Script.py .
 # Copy your preprocessing pipeline script
 COPY preprocessing_pipeline.py .
 # COPY ["C:\\Users\\Maxime\\Desktop\\Homre_Credit_Project_Ver2\\Home_Credit_Project_Ver2\\preprocessing_pipeline.py", "/app/preprocessing_pipeline.py"]
+
+# --- MODIFICATION: Clean up any old .pyc files and try to prevent new ones for debug ---
+RUN echo "Cleaning up .pyc files and __pycache__ for /app" && \
+    find /app -type d -name "__pycache__" -exec rm -r {} + && \
+    find /app -type f -name "*.pyc" -delete && \
+    echo "Done cleaning."
 
 # --- MODIFICATION: Print the content of the copied file during build ---
 RUN echo ">>>> CHECKING FOR PYC FILES for preprocessing_pipeline <<<<" && \
@@ -55,7 +69,11 @@ COPY pipeline_input_columns.txt .
 # --- Stage 5: Set Environment Variables (Optional but Recommended) ---
 # Set environment variables that your application might need.
 # This tells MLflow where to find the tracking data (your runs) INSIDE the container.
-ENV MLFLOW_TRACKING_URI="file:./mlruns"
+ENV MLFLOW_TRACKING_URI="file:///app/mlruns"
+ENV PYTHONUNBUFFERED=1 
+# Good for seeing prints immediately
+ENV PYTHONDONTWRITEBYTECODE=1 
+# <--- ADD THIS: Tell Python not to write .pyc files
 
 # Flask specific environment variables (often not strictly needed if Gunicorn is configured right)
 # ENV FLASK_APP=API_Script.py

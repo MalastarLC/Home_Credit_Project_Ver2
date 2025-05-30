@@ -355,83 +355,78 @@ def predicting_scores(full_data):
     # Use print for high visibility during this debug phase
     print("--- PREDICTING_SCORES_ENTRY_POINT_V2 ---") # New unique marker
 
+      # --- MODIFICATION: Force absolute MLflow tracking URI ---
+    absolute_tracking_uri = "file:///app/mlruns" # Note the three slashes for absolute path
+    print(f"[PREDICT_SCORES_DEBUG] Current MLflow tracking URI before forcing: {mlflow.get_tracking_uri()}")
+    print(f"[PREDICT_SCORES_DEBUG] Forcing MLflow tracking URI to: {absolute_tracking_uri}")
+    try:
+        mlflow.set_tracking_uri(absolute_tracking_uri)
+        print(f"[PREDICT_SCORES_DEBUG] MLflow tracking URI after forcing: {mlflow.get_tracking_uri()}")
+    except Exception as e_set_uri:
+        print(f"[PREDICT_SCORES_DEBUG] ERROR setting tracking URI to absolute path: {e_set_uri}")
+        # Depending on severity, you might want to raise this error or try to continue
+    # --- END MODIFICATION ---
+
     run_id_of_the_pipeline = "dc6fb5c5f64e4a90b08ca76d9b962765"
     pipeline_artifact_path = "full_lgbm_pipeline" # This name is confirmed correct
-    pipeline_model_uri = f"runs:/{run_id_of_the_pipeline}/{pipeline_artifact_path}"
+
+    # --- NEW: Construct full model path directly ---
+    pipeline_model_uri_to_use = None # Initialize
+    try:
+        run = mlflow.get_run(run_id_of_the_pipeline)
+        base_artifact_uri_for_run = run.info.artifact_uri
+        print(f"[DEBUG] Base artifact URI for run '{run_id_of_the_pipeline}': {base_artifact_uri_for_run}")
+
+        local_base_artifact_path = None # Initialize
+        if base_artifact_uri_for_run.startswith("file://"):
+            local_base_artifact_path = base_artifact_uri_for_run[len("file://"):]
+        elif base_artifact_uri_for_run == "artifacts": # Check for this specific case
+            experiment_id = run.info.experiment_id
+            # Assuming tracking URI root is /app/mlruns.
+            # For more robustness, one could parse mlflow.get_tracking_uri()
+            tracking_uri_root = "/app/mlruns" # Based on your forced URI
+            absolute_run_path = os.path.join(tracking_uri_root, experiment_id, run_id_of_the_pipeline)
+            local_base_artifact_path = os.path.join(absolute_run_path, base_artifact_uri_for_run) # This is now .../RUN_ID/artifacts
+            print(f"[DEBUG] Reconstructed local_base_artifact_path from relative 'artifacts': {local_base_artifact_path}")
+        else:
+            print(f"[WARNING] Unexpected base_artifact_uri_for_run format: {base_artifact_uri_for_run}. Assuming it's a direct local path.")
+            local_base_artifact_path = base_artifact_uri_for_run # Fallback
+
+        if local_base_artifact_path is None:
+             raise ValueError(f"Could not determine local_base_artifact_path from base_artifact_uri_for_run: {base_artifact_uri_for_run}")
+
+        # Now, pipeline_artifact_path_in_run_artifacts is the name of the model *folder* INSIDE local_base_artifact_path
+        direct_model_path = os.path.join(local_base_artifact_path, pipeline_artifact_path) # Use the correct variable name here
+        print(f"[DEBUG] Constructed direct model path for loading: {direct_model_path}")
+        
+        if not os.path.exists(direct_model_path):
+            print(f"[CRITICAL_DEBUG] The constructed direct model path DOES NOT EXIST: {direct_model_path}")
+            if os.path.exists(local_base_artifact_path):
+                 print(f"[CRITICAL_DEBUG] Contents of parent artifact dir '{local_base_artifact_path}': {os.listdir(local_base_artifact_path)}")
+            else:
+                print(f"[CRITICAL_DEBUG] Parent artifact dir '{local_base_artifact_path}' also does not exist.")
+            raise FileNotFoundError(f"Manually constructed model path not found: {direct_model_path}")
+
+        pipeline_model_uri_to_use = direct_model_path
+        print(f"[DEBUG] Using direct path for model loading: {pipeline_model_uri_to_use}")
+
+    except Exception as e_get_run:
+        print(f"[DEBUG] ERROR trying to get run info or construct direct model path: {e_get_run}")
+        traceback.print_exc()
+        raise
+    # --- END NEW ---
 
     print(f"[PREDICT_SCORES_DEBUG] Current MLflow tracking URI: {mlflow.get_tracking_uri()}")
-    print(f"[PREDICT_SCORES_DEBUG] Constructed MLflow Model URI: {pipeline_model_uri}")
 
     experiment_id_for_path = "448441841985485771"
     base_dir_to_check = "/app"
 
-    # --- Start of MLflow Path Debugging ---
-    current_tracking_uri = mlflow.get_tracking_uri()
-    expected_tracking_uri_in_container = "file:./mlruns"
-    # MLflow might resolve ./mlruns to an absolute path from WORKDIR, so check both
-    # WORKDIR is /app in the Dockerfile
-    if current_tracking_uri != expected_tracking_uri_in_container and current_tracking_uri != "file:/app/mlruns":
-        print(f"[DEBUG] Current MLflow tracking URI is '{current_tracking_uri}'. Forcing to '{expected_tracking_uri_in_container}'.")
-        try:
-            mlflow.set_tracking_uri(expected_tracking_uri_in_container)
-            current_tracking_uri = mlflow.get_tracking_uri() # Update after setting
-        except Exception as e_set_uri:
-            print(f"[DEBUG] ERROR setting tracking URI: {e_set_uri}")
-    print(f"[DEBUG] Using MLflow tracking URI: {current_tracking_uri}")
-
-    pipeline_model_uri = f"runs:/{run_id_of_the_pipeline}/{pipeline_artifact_path}"
-    print(f"[DEBUG] Constructed MLflow Model URI: {pipeline_model_uri}")
-
-    experiment_id_for_path = "448441841985485771" # From your run's directory structure
-
-    print("[DEBUG] --- Verifying Expected File System Structure Inside Container ---")
-    base_dir_to_check = "/app" # This is the WORKDIR
-    print(f"[DEBUG] Checking base WORKDIR: {base_dir_to_check}. Exists: {os.path.exists(base_dir_to_check)}")
-    if os.path.exists(base_dir_to_check):
-        try:
-            print(f"[DEBUG] Contents of {base_dir_to_check} (first 10): {os.listdir(base_dir_to_check)[:10]}")
-        except Exception as e_ls_base:
-            print(f"[DEBUG] Error listing contents of {base_dir_to_check}: {e_ls_base}")
-
-
-    paths_to_check = {
-        "mlruns_dir_in_workdir": os.path.join(base_dir_to_check, "mlruns"), # Should be /app/mlruns
-        "experiment_dir": os.path.join(base_dir_to_check, "mlruns", experiment_id_for_path),
-        "run_dir": os.path.join(base_dir_to_check, "mlruns", experiment_id_for_path, run_id_of_the_pipeline),
-        "run_artifacts_dir": os.path.join(base_dir_to_check, "mlruns", experiment_id_for_path, run_id_of_the_pipeline, "artifacts"),
-        "model_artifact_dir": os.path.join(base_dir_to_check, "mlruns", experiment_id_for_path, run_id_of_the_pipeline, "artifacts", pipeline_artifact_path)
-    }
-
-    for name, path_to_check in paths_to_check.items():
-        # For file system checks, it's usually better to work with absolute paths if you know the base.
-        # os.path.abspath() might behave unexpectedly if the path doesn't start with / inside container.
-        # Since we know base_dir_to_check is /app, the joined paths are already absolute.
-        abs_path_to_check = path_to_check # The joined paths are already absolute starting from /app
-        print(f"[DEBUG] Checking: {name} at resolved path: {abs_path_to_check}")
-        if os.path.exists(abs_path_to_check):
-            print(f"[DEBUG] ==> Path EXISTS: {abs_path_to_check}")
-            try:
-                if os.path.isdir(abs_path_to_check):
-                    contents = os.listdir(abs_path_to_check)
-                    print(f"[DEBUG]     Contents (first 5 if many): {contents[:5]}")
-                    # Specifically for model_artifact_dir, check for MLmodel
-                    if name == "model_artifact_dir":
-                        mlmodel_file_path = os.path.join(abs_path_to_check, "MLmodel")
-                        print(f"[DEBUG]     Checking for MLmodel file at: {mlmodel_file_path}. Exists: {os.path.exists(mlmodel_file_path)}")
-                else: # Should be a directory, but good to note if it's a file
-                    print(f"[DEBUG]     Note: Path is a FILE, not a directory.")
-            except Exception as e_ls:
-                print(f"[DEBUG]     Error listing contents of {abs_path_to_check}: {e_ls}")
-        else:
-            print(f"[DEBUG] ==> Path DOES NOT EXIST: {abs_path_to_check}")
-    print("[DEBUG] --- End of File System Structure Verification ---")
-    # --- End of MLflow Path Debugging ---
 
     # --- Get Model Info and Signature ---
     expected_input_columns = None # Initialize
     try:
-        print(f"Fetching model info for URI: {pipeline_model_uri}") # This is your original print
-        model_info = mlflow.models.get_model_info(pipeline_model_uri)
+        print(f"Fetching model info for URI: {pipeline_model_uri_to_use}") # This is your original print
+        model_info = mlflow.models.get_model_info(pipeline_model_uri_to_use)
         if model_info.signature is not None and model_info.signature.inputs is not None:
             input_schema_obj = model_info.signature.inputs
             if hasattr(input_schema_obj, 'input_names') and callable(getattr(input_schema_obj, 'input_names')):
@@ -481,8 +476,8 @@ def predicting_scores(full_data):
 
     # --- Model Loading with Debug ---
     try:
-        print(f"[DEBUG] About to call mlflow.sklearn.load_model('{pipeline_model_uri}')")
-        loaded_pipeline = mlflow.sklearn.load_model(pipeline_model_uri)
+        print(f"[DEBUG] About to call mlflow.sklearn.load_model('{pipeline_model_uri_to_use}')")
+        loaded_pipeline = mlflow.sklearn.load_model(pipeline_model_uri_to_use)
         print(f"\n[DEBUG] Pipeline loaded successfully via mlflow.sklearn.load_model. Type: {type(loaded_pipeline)}")
     except Exception as e_load_model:
         print(f"[DEBUG] ERROR during mlflow.sklearn.load_model: {e_load_model}")
