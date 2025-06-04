@@ -223,6 +223,13 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     bureau_balance_duree_moyenne_delais_de_paiements,
     bureau_balance_loan_duration_categorised]
 
+    print(bureau_balance_loan_duration_months.columns)
+    print(bureau_balance_last_known_loan_status.columns)
+    print(bureau_balance_nombre_delais_de_paiements.columns)
+    print(bureau_balance_nombre_de_delais_de_paiements_par_categorie.columns)
+    print(bureau_balance_duree_moyenne_delais_de_paiements.columns)
+    print(bureau_balance_loan_duration_categorised.columns)
+
     merge_key = 'SK_ID_BUREAU'
 
     merge_function = lambda left_df, right_df: pd.merge(left_df, right_df, on=merge_key, how='inner')
