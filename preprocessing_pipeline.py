@@ -264,7 +264,11 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     bureau_number_of_type_of_credits.columns.name = None
 
     bureau_for_encoding_credit_types = bureau[['SK_ID_CURR', 'CREDIT_TYPE']]
-    bureau_credit_type_encoded = pd.get_dummies(bureau_for_encoding_credit_types, dtype=int)
+    bureau_credit_type_encoded = pd.get_dummies(
+        bureau_for_encoding_credit_types, 
+        columns=['CREDIT_TYPE'], 
+        dtype=int
+        )
     bureau_liste_colonnes_encodees = bureau_credit_type_encoded.columns
     bureau_liste_colonnes_a_agreger = [col for col in bureau_liste_colonnes_encodees if col != 'SK_ID_CURR']
     bureau_credit_type_encoded_and_aggregated = bureau_credit_type_encoded.groupby('SK_ID_CURR')[bureau_liste_colonnes_a_agreger].sum().reset_index()
