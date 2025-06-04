@@ -80,6 +80,64 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     
     """
 
+    # We need to create a list of expected columns for each DataFrame because if we send to the API
+    # A batch of clients where at least one DataFrame is completely empty (i.e now customers with no loan payments history)
+    # We cant for example do any groupby because the columns dont exist so it will return an error
+    # So we will add a check before each DataFrame treatment to make sure they're there (the columns) otherwise add them
+
+    # LIST OF EXPECTED COLUMNS FOR EACH DATAFRAME
+
+    initial_expected_columns_bureau = [
+       'SK_ID_CURR', 'SK_ID_BUREAU', 
+       'CREDIT_ACTIVE', 'CREDIT_CURRENCY',
+       'DAYS_CREDIT', 'CREDIT_DAY_OVERDUE', 'DAYS_CREDIT_ENDDATE',
+       'DAYS_ENDDATE_FACT', 'AMT_CREDIT_MAX_OVERDUE', 'CNT_CREDIT_PROLONG',
+       'AMT_CREDIT_SUM', 'AMT_CREDIT_SUM_DEBT', 'AMT_CREDIT_SUM_LIMIT',
+       'AMT_CREDIT_SUM_OVERDUE', 'CREDIT_TYPE', 'DAYS_CREDIT_UPDATE',
+       'AMT_ANNUITY'
+       ]
+    initial_expected_columns_bureau_balance = [
+        'SK_ID_BUREAU', 'MONTHS_BALANCE', 'STATUS'
+        ]
+    initial_expected_columns_POS_CASH_balance = [
+       'SK_ID_PREV', 'SK_ID_CURR', 'MONTHS_BALANCE', 'CNT_INSTALMENT',
+       'CNT_INSTALMENT_FUTURE', 'NAME_CONTRACT_STATUS', 'SK_DPD',
+       'SK_DPD_DEF'
+       ]
+    initial_expected_columns_installments_payments = [
+       'SK_ID_PREV', 'SK_ID_CURR', 'NUM_INSTALMENT_VERSION',
+       'NUM_INSTALMENT_NUMBER', 'DAYS_INSTALMENT', 'DAYS_ENTRY_PAYMENT',
+       'AMT_INSTALMENT', 'AMT_PAYMENT'
+       ]
+    initial_expected_columns_previous_application = [
+       'SK_ID_PREV', 'SK_ID_CURR', 'NAME_CONTRACT_TYPE', 'AMT_ANNUITY',
+       'AMT_APPLICATION', 'AMT_CREDIT', 'AMT_DOWN_PAYMENT', 'AMT_GOODS_PRICE',
+       'WEEKDAY_APPR_PROCESS_START', 'HOUR_APPR_PROCESS_START',
+       'FLAG_LAST_APPL_PER_CONTRACT', 'NFLAG_LAST_APPL_IN_DAY',
+       'RATE_DOWN_PAYMENT', 'RATE_INTEREST_PRIMARY',
+       'RATE_INTEREST_PRIVILEGED', 'NAME_CASH_LOAN_PURPOSE',
+       'NAME_CONTRACT_STATUS', 'DAYS_DECISION', 'NAME_PAYMENT_TYPE',
+       'CODE_REJECT_REASON', 'NAME_TYPE_SUITE', 'NAME_CLIENT_TYPE',
+       'NAME_GOODS_CATEGORY', 'NAME_PORTFOLIO', 'NAME_PRODUCT_TYPE',
+       'CHANNEL_TYPE', 'SELLERPLACE_AREA', 'NAME_SELLER_INDUSTRY',
+       'CNT_PAYMENT', 'NAME_YIELD_GROUP', 'PRODUCT_COMBINATION',
+       'DAYS_FIRST_DRAWING', 'DAYS_FIRST_DUE', 'DAYS_LAST_DUE_1ST_VERSION',
+       'DAYS_LAST_DUE', 'DAYS_TERMINATION', 'NFLAG_INSURED_ON_APPROVAL'
+       ]
+    initial_expected_columns_credit_card_balance = [
+       'SK_ID_PREV', 'SK_ID_CURR', 'MONTHS_BALANCE', 'AMT_BALANCE',
+       'AMT_CREDIT_LIMIT_ACTUAL', 'AMT_DRAWINGS_ATM_CURRENT',
+       'AMT_DRAWINGS_CURRENT', 'AMT_DRAWINGS_OTHER_CURRENT',
+       'AMT_DRAWINGS_POS_CURRENT', 'AMT_INST_MIN_REGULARITY',
+       'AMT_PAYMENT_CURRENT', 'AMT_PAYMENT_TOTAL_CURRENT',
+       'AMT_RECEIVABLE_PRINCIPAL', 'AMT_RECIVABLE', 'AMT_TOTAL_RECEIVABLE',
+       'CNT_DRAWINGS_ATM_CURRENT', 'CNT_DRAWINGS_CURRENT',
+       'CNT_DRAWINGS_OTHER_CURRENT', 'CNT_DRAWINGS_POS_CURRENT',
+       'CNT_INSTALMENT_MATURE_CUM', 'NAME_CONTRACT_STATUS', 'SK_DPD',
+       'SK_DPD_DEF'
+       ]
+
+
     # --- Preparation de current_app ---
 
     # Label encoding des variables catégorielles avec 2 catégories uniques ou moins
@@ -98,6 +156,12 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     current_app = pd.get_dummies(current_app, dtype='float64')
 
     # --- Aggrégation de bureau et bureau_balance ---
+
+    if bureau_balance.shape == (0,0) :
+        bureau_balance = pd.DataFrame(columns=initial_expected_columns_bureau_balance)
+    
+    if bureau.shape == (0,0) :
+        bureau= pd.DataFrame(columns=initial_expected_columns_bureau)
     
     # Création des features "manuelles"
     bureau_balance_loan_duration_months = bureau_balance.groupby('SK_ID_BUREAU')['MONTHS_BALANCE'].count().reset_index()
@@ -133,6 +197,24 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     )
     bureau_balance_loan_duration_categorised = bureau_balance_loan_duration_categorised.drop(columns=['MONTHS_BALANCE', 'STATUS'], axis=0)
     bureau_balance_loan_duration_categorised = pd.get_dummies(bureau_balance_loan_duration_categorised, dtype=int)
+
+    # Failproofnet loan type
+    expected_loan_type_dummies = ['LOAN_TYPE_Long Term', 'LOAN_TYPE_Short Term']
+    for col_name_to_ensure in expected_loan_type_dummies:
+        if col_name_to_ensure not in bureau_balance_loan_duration_categorised.columns:
+        # If the DataFrame is not empty, assign 0. 
+        # If it's empty, assign an empty Series of the correct dtype.
+        # This ensures the column exists for schema consistency in merges.
+            if not bureau_balance_loan_duration_categorised.empty:
+                bureau_balance_loan_duration_categorised[col_name_to_ensure] = 0
+            else:
+            # If bureau_balance_loan_duration_categorised is truly empty (no rows, no SK_ID_BUREAU),
+            # creating just an empty Series might still cause issues if SK_ID_BUREAU is needed
+            # for the merge into final_bureau_balance_features.
+            # However, the goal here is to prevent the KeyError when these columns are *selected*.
+            # If this df is empty, the subsequent inner merge for final_bureau_balance_features might
+            # result in an empty df anyway, which is handled later.
+                bureau_balance_loan_duration_categorised[col_name_to_ensure] = pd.Series(dtype='int')
 
     dfs_to_merge = [bureau_balance_loan_duration_months,
     bureau_balance_last_known_loan_status,
@@ -309,6 +391,17 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     features_manual_and_func_from_first_three_with_app_train = pd.merge(left=current_app, right=features_manual_and_func_from_first_three_without_app_train, how='left', on='SK_ID_CURR')
 
     # Aggrégation à l'aide des fonctions de previous_application, POS_CASH_balance, installments_payments et credit_card_balance
+
+    if previous_application.shape == (0,0) : 
+        previous_application = pd.DataFrame(columns=initial_expected_columns_previous_application)
+    if POS_CASH_balance.shape == (0,0) : 
+        POS_CASH_balance = pd.DataFrame(columns=initial_expected_columns_POS_CASH_balance)
+    if installments_payments.shape == (0,0) : 
+        installments_payments = pd.DataFrame(columns=initial_expected_columns_installments_payments)
+    if credit_card_balance.shape == (0,0) : 
+        credit_card_balance = pd.DataFrame(columns=initial_expected_columns_credit_card_balance)
+
+
     previous_application_num_agg_SK_ID_CURR = agg_numeric(previous_application.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='previous_application')
     previous_application_cat_agg_SK_ID_CURR = count_categorical(previous_application.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='previous_application')
 
