@@ -443,6 +443,7 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
        ]
     
     bureau_expected_columns_after_categorical_aggregation = [
+       'SK_ID_BUREAU',
        'bureau_CREDIT_ACTIVE_Active_count',
        'bureau_CREDIT_ACTIVE_Active_count_norm',
        'bureau_CREDIT_ACTIVE_Bad debt_count',
@@ -500,6 +501,7 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
        ]
     
     bureau_balance_expected_columns_after_categorical_aggregation = [
+       'SK_ID_BUREAU',
        'bureau_balance_STATUS_0_count', 'bureau_balance_STATUS_0_count_norm',
        'bureau_balance_STATUS_1_count', 'bureau_balance_STATUS_1_count_norm',
        'bureau_balance_STATUS_2_count', 'bureau_balance_STATUS_2_count_norm',
