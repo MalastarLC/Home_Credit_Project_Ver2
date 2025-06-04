@@ -223,17 +223,34 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     bureau_balance_duree_moyenne_delais_de_paiements,
     bureau_balance_loan_duration_categorised]
 
-    print(bureau_balance_loan_duration_months.columns)
-    print(bureau_balance_last_known_loan_status.columns)
-    print(bureau_balance_nombre_delais_de_paiements.columns)
-    print(bureau_balance_nombre_de_delais_de_paiements_par_categorie.columns)
-    print(bureau_balance_duree_moyenne_delais_de_paiements.columns)
-    print(bureau_balance_loan_duration_categorised.columns)
+    # We add a step to make sure the merge key is present to prevent errors in the reduce function
+
+    expected_features_for_bureau_balance_loan_duration_months = ['SK_ID_BUREAU', 'MONTHS_LOAN_DURATION']
+    expected_features_for_bureau_balance_last_known_loan_status = ['SK_ID_BUREAU', 'STATUS', '0', '1', '2', '3', '4', '5', 'C', 'X']
+    expected_features_for_bureau_balance_nombre_delais_de_paiements = ['SK_ID_BUREAU', 'DPD_FLAG']
+    expected_features_for_bureau_balance_nombre_de_delais_de_paiements_par_categorie = ['SK_ID_BUREAU', '0', '1', '2', '3', '4', '5', 'C', 'X']
+    expected_features_for_bureau_balance_duree_moyenne_delais_de_paiements = [['SK_ID_BUREAU', 'MEAN_DAYS_PAST_DUE']]
+    expected_features_for_bureau_balance_loan_duration_categorised = ['SK_ID_BUREAU', 'YEAR_LOAN_DURATION', 'LOAN_TYPE_Long Term', 'LOAN_TYPE_Short Term']
+
+    list_of_expected_features_per_df = [
+        expected_features_for_bureau_balance_loan_duration_months, expected_features_for_bureau_balance_last_known_loan_status, 
+        expected_features_for_bureau_balance_nombre_delais_de_paiements, expected_features_for_bureau_balance_nombre_de_delais_de_paiements_par_categorie, 
+        expected_features_for_bureau_balance_duree_moyenne_delais_de_paiements, expected_features_for_bureau_balance_loan_duration_categorised
+        ]
+
+    validated_dfs_to_merge = []
+
+    for df_unchecked, expected_col_list in zip(dfs_to_merge, list_of_expected_features_per_df): #utiliser zip plutot que if and sinon ca va pas faire correspondre correctement les deux conditions par exemple ça va mettre df 2 avec liste de colonne 1
+        if df_unchecked.empty :
+            df_corrected = pd.DataFrame(columns=expected_col_list)
+            validated_dfs_to_merge.append(df_corrected)
+        else :
+            validated_dfs_to_merge.append(df_unchecked)
 
     merge_key = 'SK_ID_BUREAU'
 
     merge_function = lambda left_df, right_df: pd.merge(left_df, right_df, on=merge_key, how='inner')
-    final_bureau_balance_features = reduce(merge_function, dfs_to_merge)
+    final_bureau_balance_features = reduce(merge_function, validated_dfs_to_merge)
     #final_bureau_balance_features = final_bureau_balance_features.drop(columns=['0', 'C', 'X'])
 
 
