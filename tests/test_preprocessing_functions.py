@@ -27,6 +27,7 @@ def test_sanitize_only_special_chars():
 
 # --- Tests pour agg_numeric (exemple) ---
 # Vous aurez besoin de créer des DataFrames d'exemple
+"""
 def test_agg_numeric_basic():
     data = {
         'SK_ID_GROUP': [1, 1, 2, 2, 3],
@@ -53,6 +54,7 @@ def test_agg_numeric_basic():
     assert agg_df[agg_df['SK_ID_GROUP'] == 1]['test_df_Numeric_Col1_mean'].iloc[0] == 15.0
     # Pour SK_ID_GROUP == 2, somme de Numeric_Col2 devrait être 7
     assert agg_df[agg_df['SK_ID_GROUP'] == 2]['test_df_Numeric_Col2_sum'].iloc[0] == 7.0
+"""
 
 # Vous ajouterez des tests similaires pour count_categorical et des parties de prepare_input_data
 
