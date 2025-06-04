@@ -769,15 +769,33 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
 
     installments_payments_num_agg_SK_ID_CURR = agg_numeric(installments_payments.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='credit_card_balance', expected_columns_after_numeric_aggregation=installments_payments_expected_columns_after_numerical_aggregation)
 
-    dfs_to_merge = [installments_payments_num_agg_SK_ID_CURR, 
-                previous_application_num_agg_SK_ID_CURR, previous_application_cat_agg_SK_ID_CURR, 
-                POS_CASH_balance_num_agg_SK_ID_CURR, POS_CASH_balance_cat_agg_SK_ID_CURR, 
-                credit_card_balance_num_agg_SK_ID_CURR, credit_card_balance_cat_agg_SK_ID_CURR]
+    dfs_to_merge = [
+        previous_application_num_agg_SK_ID_CURR, previous_application_cat_agg_SK_ID_CURR,
+        POS_CASH_balance_num_agg_SK_ID_CURR, POS_CASH_balance_cat_agg_SK_ID_CURR,
+        credit_card_balance_num_agg_SK_ID_CURR, credit_card_balance_cat_agg_SK_ID_CURR,
+        installments_payments_num_agg_SK_ID_CURR   
+    ]
+
+    list_of_expected_features_per_df = [
+    previous_application_expected_columns_after_numeric_aggregation, previous_application_expected_columns_after_categorical_aggregation, 
+    POS_CASH_balance_expected_columns_after_numeric_aggregation, POS_CASH_balance_expected_columns_after_categorical_aggregation, 
+    credit_card_balance_expected_columns_after_numerical_aggregation, credit_card_balance_expected_columns_after_categorical_aggregation,
+    installments_payments_expected_columns_after_numerical_aggregation
+    ]
+
+    validated_dfs_to_merge = []
+
+    for df_unchecked, expected_col_list in zip(dfs_to_merge, list_of_expected_features_per_df): #utiliser zip plutot que if and sinon ca va pas faire correspondre correctement les deux conditions par exemple ça va mettre df 2 avec liste de colonne 1
+        if df_unchecked.empty :
+            df_corrected = pd.DataFrame(columns=expected_col_list)
+            validated_dfs_to_merge.append(df_corrected)
+        else :
+            validated_dfs_to_merge.append(df_unchecked)
     
     merge_key = 'SK_ID_CURR'
 
     merge_function = lambda left_df, right_df: pd.merge(left_df, right_df, on=merge_key, how='left')
-    features_func_from_last_four = reduce(merge_function, dfs_to_merge)
+    features_func_from_last_four = reduce(merge_function, validated_dfs_to_merge)
     full_data = pd.merge(left=features_manual_and_func_from_first_three_with_app_train, right=features_func_from_last_four, how='left', on='SK_ID_CURR')
     print("\nDataset was properly aggregated.")
 
