@@ -196,7 +196,12 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
         'Short Term'                                             # Value if False
     )
     bureau_balance_loan_duration_categorised = bureau_balance_loan_duration_categorised.drop(columns=['MONTHS_BALANCE', 'STATUS'], axis=0)
-    bureau_balance_loan_duration_categorised = pd.get_dummies(bureau_balance_loan_duration_categorised, dtype=int)
+    bureau_balance_loan_duration_categorised = pd.get_dummies(
+        bureau_balance_loan_duration_categorised, # This DataFrame ALREADY has 'SK_ID_BUREAU'
+        columns=['LOAN_TYPE'], # This will only dummify LOAN_TYPE and not risk adding another SK_ID_BUREAU
+        dtype=int
+        # prefix='LOAN_TYPE' # You should add a prefix here if not already done
+    )
 
     # Failproofnet loan type
     expected_loan_type_dummies = ['LOAN_TYPE_Long Term', 'LOAN_TYPE_Short Term']
