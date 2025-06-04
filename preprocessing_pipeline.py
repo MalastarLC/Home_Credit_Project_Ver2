@@ -20,32 +20,38 @@ from sklearn.preprocessing import LabelEncoder
 # --- Définition des fonctions nécessaires à la préparation de l'input pour le modèle ---
 
 # ... (agg_numeric function - NO CHANGES) ...
-def agg_numeric(df, group_var, df_name):
-    for col in df:
-        if col != group_var and 'SK_ID' in col:
-            df = df.drop(columns = col)
-    group_ids = df[group_var]
-    numeric_df = df.select_dtypes('number')
-    numeric_df[group_var] = group_ids
-    agg = numeric_df.groupby(group_var).agg(['count', 'mean', 'max', 'min', 'sum']).reset_index()
-    columns = [group_var]
-    for var in agg.columns.levels[0]:
-        if var != group_var:
-            for stat in agg.columns.levels[1][:-1]:
-                columns.append('%s_%s_%s' % (df_name, var, stat))
-    agg.columns = columns
+def agg_numeric(df, group_var, df_name, expected_columns_after_numeric_aggregation):
+    if df.empty :
+        agg = pd.DataFrame(columns=expected_columns_after_numeric_aggregation)
+    else :
+        for col in df:
+            if col != group_var and 'SK_ID' in col:
+                df = df.drop(columns = col)
+        group_ids = df[group_var]
+        numeric_df = df.select_dtypes('number')
+        numeric_df[group_var] = group_ids
+        agg = numeric_df.groupby(group_var).agg(['count', 'mean', 'max', 'min', 'sum']).reset_index()
+        columns = [group_var]
+        for var in agg.columns.levels[0]:
+            if var != group_var:
+                for stat in agg.columns.levels[1][:-1]:
+                    columns.append('%s_%s_%s' % (df_name, var, stat))
+        agg.columns = columns
     return agg
 
 # ... (count_categorical function - NO CHANGES) ...
-def count_categorical(df, group_var, df_name):
-    categorical = pd.get_dummies(df.select_dtypes('object'))
-    categorical[group_var] = df[group_var]
-    categorical = categorical.groupby(group_var).agg(['sum', 'mean'])
-    column_names = []
-    for var in categorical.columns.levels[0]:
-        for stat in ['count', 'count_norm']:
-            column_names.append('%s_%s_%s' % (df_name, var, stat))
-    categorical.columns = column_names
+def count_categorical(df, group_var, df_name, expected_columns_after_categorical_aggregation):
+    if df.empty :
+        categorical = pd.DataFrame(columns=expected_columns_after_categorical_aggregation)
+    else :
+        categorical = pd.get_dummies(df.select_dtypes('object'))
+        categorical[group_var] = df[group_var]
+        categorical = categorical.groupby(group_var).agg(['sum', 'mean'])
+        column_names = []
+        for var in categorical.columns.levels[0]:
+            for stat in ['count', 'count_norm']:
+                column_names.append('%s_%s_%s' % (df_name, var, stat))
+        categorical.columns = column_names
     return categorical
 
 # ... (sanitize_lgbm_colname function - NO CHANGES) ...
@@ -396,13 +402,120 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
        'SUM_LOAN_TYPE_Short Term']
     application_train_with_bureau_and_bureau_balance[cols_to_fill] = application_train_with_bureau_and_bureau_balance[cols_to_fill].fillna(value=0)"""
 
+    # List of expected columns after aggregation to use in case the input DataFrame is empty
+
+    bureau_expected_columns_after_numeric_aggregation = [
+       'SK_ID_CURR', 'bureau_DAYS_CREDIT_count', 'bureau_DAYS_CREDIT_mean',
+       'bureau_DAYS_CREDIT_max', 'bureau_DAYS_CREDIT_min',
+       'bureau_DAYS_CREDIT_sum', 'bureau_CREDIT_DAY_OVERDUE_count',
+       'bureau_CREDIT_DAY_OVERDUE_mean', 'bureau_CREDIT_DAY_OVERDUE_max',
+       'bureau_CREDIT_DAY_OVERDUE_min', 'bureau_CREDIT_DAY_OVERDUE_sum',
+       'bureau_DAYS_CREDIT_ENDDATE_count', 'bureau_DAYS_CREDIT_ENDDATE_mean',
+       'bureau_DAYS_CREDIT_ENDDATE_max', 'bureau_DAYS_CREDIT_ENDDATE_min',
+       'bureau_DAYS_CREDIT_ENDDATE_sum', 'bureau_DAYS_ENDDATE_FACT_count',
+       'bureau_DAYS_ENDDATE_FACT_mean', 'bureau_DAYS_ENDDATE_FACT_max',
+       'bureau_DAYS_ENDDATE_FACT_min', 'bureau_DAYS_ENDDATE_FACT_sum',
+       'bureau_AMT_CREDIT_MAX_OVERDUE_count',
+       'bureau_AMT_CREDIT_MAX_OVERDUE_mean',
+       'bureau_AMT_CREDIT_MAX_OVERDUE_max',
+       'bureau_AMT_CREDIT_MAX_OVERDUE_min',
+       'bureau_AMT_CREDIT_MAX_OVERDUE_sum', 'bureau_CNT_CREDIT_PROLONG_count',
+       'bureau_CNT_CREDIT_PROLONG_mean', 'bureau_CNT_CREDIT_PROLONG_max',
+       'bureau_CNT_CREDIT_PROLONG_min', 'bureau_CNT_CREDIT_PROLONG_sum',
+       'bureau_AMT_CREDIT_SUM_count', 'bureau_AMT_CREDIT_SUM_mean',
+       'bureau_AMT_CREDIT_SUM_max', 'bureau_AMT_CREDIT_SUM_min',
+       'bureau_AMT_CREDIT_SUM_sum', 'bureau_AMT_CREDIT_SUM_DEBT_count',
+       'bureau_AMT_CREDIT_SUM_DEBT_mean', 'bureau_AMT_CREDIT_SUM_DEBT_max',
+       'bureau_AMT_CREDIT_SUM_DEBT_min', 'bureau_AMT_CREDIT_SUM_DEBT_sum',
+       'bureau_AMT_CREDIT_SUM_LIMIT_count', 'bureau_AMT_CREDIT_SUM_LIMIT_mean',
+       'bureau_AMT_CREDIT_SUM_LIMIT_max', 'bureau_AMT_CREDIT_SUM_LIMIT_min',
+       'bureau_AMT_CREDIT_SUM_LIMIT_sum',
+       'bureau_AMT_CREDIT_SUM_OVERDUE_count',
+       'bureau_AMT_CREDIT_SUM_OVERDUE_mean',
+       'bureau_AMT_CREDIT_SUM_OVERDUE_max',
+       'bureau_AMT_CREDIT_SUM_OVERDUE_min',
+       'bureau_AMT_CREDIT_SUM_OVERDUE_sum', 'bureau_DAYS_CREDIT_UPDATE_count',
+       'bureau_DAYS_CREDIT_UPDATE_mean', 'bureau_DAYS_CREDIT_UPDATE_max',
+       'bureau_DAYS_CREDIT_UPDATE_min', 'bureau_DAYS_CREDIT_UPDATE_sum',
+       'bureau_AMT_ANNUITY_count', 'bureau_AMT_ANNUITY_mean',
+       'bureau_AMT_ANNUITY_max', 'bureau_AMT_ANNUITY_min',
+       'bureau_AMT_ANNUITY_sum'
+       ]
+    
+    bureau_expected_columns_after_categorical_aggregation = [
+       'bureau_CREDIT_ACTIVE_Active_count',
+       'bureau_CREDIT_ACTIVE_Active_count_norm',
+       'bureau_CREDIT_ACTIVE_Bad debt_count',
+       'bureau_CREDIT_ACTIVE_Bad debt_count_norm',
+       'bureau_CREDIT_ACTIVE_Closed_count',
+       'bureau_CREDIT_ACTIVE_Closed_count_norm',
+       'bureau_CREDIT_ACTIVE_Sold_count',
+       'bureau_CREDIT_ACTIVE_Sold_count_norm',
+       'bureau_CREDIT_CURRENCY_currency 1_count',
+       'bureau_CREDIT_CURRENCY_currency 1_count_norm',
+       'bureau_CREDIT_CURRENCY_currency 2_count',
+       'bureau_CREDIT_CURRENCY_currency 2_count_norm',
+       'bureau_CREDIT_CURRENCY_currency 3_count',
+       'bureau_CREDIT_CURRENCY_currency 3_count_norm',
+       'bureau_CREDIT_CURRENCY_currency 4_count',
+       'bureau_CREDIT_CURRENCY_currency 4_count_norm',
+       'bureau_CREDIT_TYPE_Another type of loan_count',
+       'bureau_CREDIT_TYPE_Another type of loan_count_norm',
+       'bureau_CREDIT_TYPE_Car loan_count',
+       'bureau_CREDIT_TYPE_Car loan_count_norm',
+       'bureau_CREDIT_TYPE_Cash loan (non-earmarked)_count',
+       'bureau_CREDIT_TYPE_Cash loan (non-earmarked)_count_norm',
+       'bureau_CREDIT_TYPE_Consumer credit_count',
+       'bureau_CREDIT_TYPE_Consumer credit_count_norm',
+       'bureau_CREDIT_TYPE_Credit card_count',
+       'bureau_CREDIT_TYPE_Credit card_count_norm',
+       'bureau_CREDIT_TYPE_Interbank credit_count',
+       'bureau_CREDIT_TYPE_Interbank credit_count_norm',
+       'bureau_CREDIT_TYPE_Loan for business development_count',
+       'bureau_CREDIT_TYPE_Loan for business development_count_norm',
+       'bureau_CREDIT_TYPE_Loan for purchase of shares (margin lending)_count',
+       'bureau_CREDIT_TYPE_Loan for purchase of shares (margin lending)_count_norm',
+       'bureau_CREDIT_TYPE_Loan for the purchase of equipment_count',
+       'bureau_CREDIT_TYPE_Loan for the purchase of equipment_count_norm',
+       'bureau_CREDIT_TYPE_Loan for working capital replenishment_count',
+       'bureau_CREDIT_TYPE_Loan for working capital replenishment_count_norm',
+       'bureau_CREDIT_TYPE_Microloan_count',
+       'bureau_CREDIT_TYPE_Microloan_count_norm',
+       'bureau_CREDIT_TYPE_Mobile operator loan_count',
+       'bureau_CREDIT_TYPE_Mobile operator loan_count_norm',
+       'bureau_CREDIT_TYPE_Mortgage_count',
+       'bureau_CREDIT_TYPE_Mortgage_count_norm',
+       'bureau_CREDIT_TYPE_Real estate loan_count',
+       'bureau_CREDIT_TYPE_Real estate loan_count_norm',
+       'bureau_CREDIT_TYPE_Unknown type of loan_count',
+       'bureau_CREDIT_TYPE_Unknown type of loan_count_norm'
+       ]
+    
+    bureau_balance_expected_columns_after_numeric_aggregation = [
+       'SK_ID_BUREAU', 'bureau_balance_MONTHS_BALANCE_count',
+       'bureau_balance_MONTHS_BALANCE_mean',
+       'bureau_balance_MONTHS_BALANCE_max',
+       'bureau_balance_MONTHS_BALANCE_min',
+       'bureau_balance_MONTHS_BALANCE_sum'
+       ]
+    
+    bureau_balance_expected_columns_after_categorical_aggregation = [
+       'bureau_balance_STATUS_0_count', 'bureau_balance_STATUS_0_count_norm',
+       'bureau_balance_STATUS_1_count', 'bureau_balance_STATUS_1_count_norm',
+       'bureau_balance_STATUS_2_count', 'bureau_balance_STATUS_2_count_norm',
+       'bureau_balance_STATUS_3_count', 'bureau_balance_STATUS_3_count_norm',
+       'bureau_balance_STATUS_4_count', 'bureau_balance_STATUS_4_count_norm',
+       'bureau_balance_STATUS_5_count', 'bureau_balance_STATUS_5_count_norm',
+       'bureau_balance_STATUS_C_count', 'bureau_balance_STATUS_C_count_norm',
+       'bureau_balance_STATUS_X_count', 'bureau_balance_STATUS_X_count_norm'
+       ]
     
     # Création des features à l'aide des deux fonctions d'aggrégation
-    num_features_with_function_bureau = agg_numeric(bureau.drop(columns = ['SK_ID_BUREAU']), group_var = 'SK_ID_CURR', df_name = 'bureau')
-    cat_features_with_function_bureau = count_categorical(bureau, group_var = 'SK_ID_CURR', df_name = 'bureau')
+    num_features_with_function_bureau = agg_numeric(bureau.drop(columns = ['SK_ID_BUREAU']), group_var = 'SK_ID_CURR', df_name = 'bureau', expected_columns_after_numeric_aggregation=bureau_expected_columns_after_numeric_aggregation)
+    cat_features_with_function_bureau = count_categorical(bureau, group_var = 'SK_ID_CURR', df_name = 'bureau', expected_columns_after_categorical_aggregation=bureau_expected_columns_after_categorical_aggregation)
 
-    num_features_with_function_bureau_balance = agg_numeric(bureau_balance, group_var = 'SK_ID_BUREAU', df_name = 'bureau_balance')
-    cat_features_with_function_bureau_balance = count_categorical(bureau_balance, group_var = 'SK_ID_BUREAU', df_name = 'bureau_balance')
+    num_features_with_function_bureau_balance = agg_numeric(bureau_balance, group_var = 'SK_ID_BUREAU', df_name = 'bureau_balance', expected_columns_after_numeric_aggregation=bureau_balance_expected_columns_after_numeric_aggregation)
+    cat_features_with_function_bureau_balance = count_categorical(bureau_balance, group_var = 'SK_ID_BUREAU', df_name = 'bureau_balance', expected_columns_after_categorical_aggregation=bureau_balance_expected_columns_after_categorical_aggregation)
 
     num_and_cat_features_with_function_bureau_balance = pd.merge(num_features_with_function_bureau_balance, cat_features_with_function_bureau_balance, how='inner', on='SK_ID_BUREAU')
     ids_for_agg = bureau[['SK_ID_CURR', 'SK_ID_BUREAU']]
@@ -434,17 +547,221 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     if credit_card_balance.shape == (0,0) : 
         credit_card_balance = pd.DataFrame(columns=initial_expected_columns_credit_card_balance)
 
+    
+    # List of expected columns after aggregation in case input is empty for previous_application
 
-    previous_application_num_agg_SK_ID_CURR = agg_numeric(previous_application.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='previous_application')
-    previous_application_cat_agg_SK_ID_CURR = count_categorical(previous_application.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='previous_application')
+    previous_application_expected_columns_after_numeric_aggregation = [
+       'SK_ID_CURR', 'previous_application_AMT_ANNUITY_count',
+       'previous_application_AMT_ANNUITY_mean',
+       'previous_application_AMT_ANNUITY_max',
+       'previous_application_AMT_ANNUITY_min',
+       'previous_application_AMT_ANNUITY_sum',
+       'previous_application_AMT_APPLICATION_count',
+       'previous_application_AMT_APPLICATION_mean',
+       'previous_application_AMT_APPLICATION_max',
+       'previous_application_AMT_APPLICATION_min',
+       'previous_application_AMT_APPLICATION_sum',
+       'previous_application_AMT_CREDIT_count',
+       'previous_application_AMT_CREDIT_mean',
+       'previous_application_AMT_CREDIT_max',
+       'previous_application_AMT_CREDIT_min',
+       'previous_application_AMT_CREDIT_sum',
+       'previous_application_AMT_DOWN_PAYMENT_count',
+       'previous_application_AMT_DOWN_PAYMENT_mean',
+       'previous_application_AMT_DOWN_PAYMENT_max',
+       'previous_application_AMT_DOWN_PAYMENT_min',
+       'previous_application_AMT_DOWN_PAYMENT_sum',
+       'previous_application_AMT_GOODS_PRICE_count',
+       'previous_application_AMT_GOODS_PRICE_mean',
+       'previous_application_AMT_GOODS_PRICE_max',
+       'previous_application_AMT_GOODS_PRICE_min',
+       'previous_application_AMT_GOODS_PRICE_sum',
+       'previous_application_HOUR_APPR_PROCESS_START_count',
+       'previous_application_HOUR_APPR_PROCESS_START_mean',
+       'previous_application_HOUR_APPR_PROCESS_START_max',
+       'previous_application_HOUR_APPR_PROCESS_START_min',
+       'previous_application_HOUR_APPR_PROCESS_START_sum',
+       'previous_application_NFLAG_LAST_APPL_IN_DAY_count',
+       'previous_application_NFLAG_LAST_APPL_IN_DAY_mean',
+       'previous_application_NFLAG_LAST_APPL_IN_DAY_max',
+       'previous_application_NFLAG_LAST_APPL_IN_DAY_min',
+       'previous_application_NFLAG_LAST_APPL_IN_DAY_sum',
+       'previous_application_RATE_DOWN_PAYMENT_count',
+       'previous_application_RATE_DOWN_PAYMENT_mean',
+       'previous_application_RATE_DOWN_PAYMENT_max',
+       'previous_application_RATE_DOWN_PAYMENT_min',
+       'previous_application_RATE_DOWN_PAYMENT_sum',
+       'previous_application_RATE_INTEREST_PRIMARY_count',
+       'previous_application_RATE_INTEREST_PRIMARY_mean',
+       'previous_application_RATE_INTEREST_PRIMARY_max',
+       'previous_application_RATE_INTEREST_PRIMARY_min',
+       'previous_application_RATE_INTEREST_PRIMARY_sum',
+       'previous_application_RATE_INTEREST_PRIVILEGED_count',
+       'previous_application_RATE_INTEREST_PRIVILEGED_mean',
+       'previous_application_RATE_INTEREST_PRIVILEGED_max',
+       'previous_application_RATE_INTEREST_PRIVILEGED_min',
+       'previous_application_RATE_INTEREST_PRIVILEGED_sum',
+       'previous_application_DAYS_DECISION_count',
+       'previous_application_DAYS_DECISION_mean',
+       'previous_application_DAYS_DECISION_max',
+       'previous_application_DAYS_DECISION_min',
+       'previous_application_DAYS_DECISION_sum',
+       'previous_application_SELLERPLACE_AREA_count',
+       'previous_application_SELLERPLACE_AREA_mean',
+       'previous_application_SELLERPLACE_AREA_max',
+       'previous_application_SELLERPLACE_AREA_min',
+       'previous_application_SELLERPLACE_AREA_sum',
+       'previous_application_CNT_PAYMENT_count',
+       'previous_application_CNT_PAYMENT_mean',
+       'previous_application_CNT_PAYMENT_max',
+       'previous_application_CNT_PAYMENT_min',
+       'previous_application_CNT_PAYMENT_sum',
+       'previous_application_DAYS_FIRST_DRAWING_count',
+       'previous_application_DAYS_FIRST_DRAWING_mean',
+       'previous_application_DAYS_FIRST_DRAWING_max',
+       'previous_application_DAYS_FIRST_DRAWING_min',
+       'previous_application_DAYS_FIRST_DRAWING_sum',
+       'previous_application_DAYS_FIRST_DUE_count',
+       'previous_application_DAYS_FIRST_DUE_mean',
+       'previous_application_DAYS_FIRST_DUE_max',
+       'previous_application_DAYS_FIRST_DUE_min',
+       'previous_application_DAYS_FIRST_DUE_sum',
+       'previous_application_DAYS_LAST_DUE_1ST_VERSION_count',
+       'previous_application_DAYS_LAST_DUE_1ST_VERSION_mean',
+       'previous_application_DAYS_LAST_DUE_1ST_VERSION_max',
+       'previous_application_DAYS_LAST_DUE_1ST_VERSION_min',
+       'previous_application_DAYS_LAST_DUE_1ST_VERSION_sum',
+       'previous_application_DAYS_LAST_DUE_count',
+       'previous_application_DAYS_LAST_DUE_mean',
+       'previous_application_DAYS_LAST_DUE_max',
+       'previous_application_DAYS_LAST_DUE_min',
+       'previous_application_DAYS_LAST_DUE_sum',
+       'previous_application_DAYS_TERMINATION_count',
+       'previous_application_DAYS_TERMINATION_mean',
+       'previous_application_DAYS_TERMINATION_max',
+       'previous_application_DAYS_TERMINATION_min',
+       'previous_application_DAYS_TERMINATION_sum',
+       'previous_application_NFLAG_INSURED_ON_APPROVAL_count',
+       'previous_application_NFLAG_INSURED_ON_APPROVAL_mean',
+       'previous_application_NFLAG_INSURED_ON_APPROVAL_max',
+       'previous_application_NFLAG_INSURED_ON_APPROVAL_min',
+       'previous_application_NFLAG_INSURED_ON_APPROVAL_sum'
+       ]
+    
+    previous_application_expected_columns_after_categorical_aggregation = ['previous_application_NAME_CONTRACT_TYPE_Cash loans_count', 'previous_application_NAME_CONTRACT_TYPE_Cash loans_count_norm', 'previous_application_NAME_CONTRACT_TYPE_Consumer loans_count', 'previous_application_NAME_CONTRACT_TYPE_Consumer loans_count_norm', 'previous_application_NAME_CONTRACT_TYPE_Revolving loans_count', 'previous_application_NAME_CONTRACT_TYPE_Revolving loans_count_norm', 'previous_application_NAME_CONTRACT_TYPE_XNA_count', 'previous_application_NAME_CONTRACT_TYPE_XNA_count_norm', 'previous_application_WEEKDAY_APPR_PROCESS_START_FRIDAY_count', 'previous_application_WEEKDAY_APPR_PROCESS_START_FRIDAY_count_norm', 'previous_application_WEEKDAY_APPR_PROCESS_START_MONDAY_count', 'previous_application_WEEKDAY_APPR_PROCESS_START_MONDAY_count_norm', 'previous_application_WEEKDAY_APPR_PROCESS_START_SATURDAY_count', 'previous_application_WEEKDAY_APPR_PROCESS_START_SATURDAY_count_norm', 'previous_application_WEEKDAY_APPR_PROCESS_START_SUNDAY_count', 'previous_application_WEEKDAY_APPR_PROCESS_START_SUNDAY_count_norm', 'previous_application_WEEKDAY_APPR_PROCESS_START_THURSDAY_count', 'previous_application_WEEKDAY_APPR_PROCESS_START_THURSDAY_count_norm', 'previous_application_WEEKDAY_APPR_PROCESS_START_TUESDAY_count', 'previous_application_WEEKDAY_APPR_PROCESS_START_TUESDAY_count_norm', 'previous_application_WEEKDAY_APPR_PROCESS_START_WEDNESDAY_count', 'previous_application_WEEKDAY_APPR_PROCESS_START_WEDNESDAY_count_norm', 'previous_application_FLAG_LAST_APPL_PER_CONTRACT_N_count', 'previous_application_FLAG_LAST_APPL_PER_CONTRACT_N_count_norm', 'previous_application_FLAG_LAST_APPL_PER_CONTRACT_Y_count', 'previous_application_FLAG_LAST_APPL_PER_CONTRACT_Y_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Building a house or an annex_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Building a house or an annex_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Business development_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Business development_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a garage_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a garage_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a holiday home / land_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a holiday home / land_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a home_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a home_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a new car_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a new car_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a used car_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Buying a used car_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Car repairs_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Car repairs_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Education_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Education_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Everyday expenses_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Everyday expenses_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Furniture_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Furniture_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Gasification / water supply_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Gasification / water supply_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Hobby_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Hobby_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Journey_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Journey_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Medicine_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Medicine_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Money for a third person_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Money for a third person_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Other_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Other_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Payments on other loans_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Payments on other loans_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Purchase of electronic equipment_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Purchase of electronic equipment_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Refusal to name the goal_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Refusal to name the goal_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Repairs_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Repairs_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Urgent needs_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Urgent needs_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_Wedding / gift / holiday_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_Wedding / gift / holiday_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_XAP_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_XAP_count_norm', 'previous_application_NAME_CASH_LOAN_PURPOSE_XNA_count', 'previous_application_NAME_CASH_LOAN_PURPOSE_XNA_count_norm', 'previous_application_NAME_CONTRACT_STATUS_Approved_count', 'previous_application_NAME_CONTRACT_STATUS_Approved_count_norm', 'previous_application_NAME_CONTRACT_STATUS_Canceled_count', 'previous_application_NAME_CONTRACT_STATUS_Canceled_count_norm', 'previous_application_NAME_CONTRACT_STATUS_Refused_count', 'previous_application_NAME_CONTRACT_STATUS_Refused_count_norm', 'previous_application_NAME_CONTRACT_STATUS_Unused offer_count', 'previous_application_NAME_CONTRACT_STATUS_Unused offer_count_norm', 'previous_application_NAME_PAYMENT_TYPE_Cash through the bank_count', 'previous_application_NAME_PAYMENT_TYPE_Cash through the bank_count_norm', 'previous_application_NAME_PAYMENT_TYPE_Cashless from the account of the employer_count', 'previous_application_NAME_PAYMENT_TYPE_Cashless from the account of the employer_count_norm', 'previous_application_NAME_PAYMENT_TYPE_Non-cash from your account_count', 'previous_application_NAME_PAYMENT_TYPE_Non-cash from your account_count_norm', 'previous_application_NAME_PAYMENT_TYPE_XNA_count', 'previous_application_NAME_PAYMENT_TYPE_XNA_count_norm', 'previous_application_CODE_REJECT_REASON_CLIENT_count', 'previous_application_CODE_REJECT_REASON_CLIENT_count_norm', 'previous_application_CODE_REJECT_REASON_HC_count', 'previous_application_CODE_REJECT_REASON_HC_count_norm', 'previous_application_CODE_REJECT_REASON_LIMIT_count', 'previous_application_CODE_REJECT_REASON_LIMIT_count_norm', 'previous_application_CODE_REJECT_REASON_SCO_count', 'previous_application_CODE_REJECT_REASON_SCO_count_norm', 'previous_application_CODE_REJECT_REASON_SCOFR_count', 'previous_application_CODE_REJECT_REASON_SCOFR_count_norm', 'previous_application_CODE_REJECT_REASON_SYSTEM_count', 'previous_application_CODE_REJECT_REASON_SYSTEM_count_norm', 'previous_application_CODE_REJECT_REASON_VERIF_count', 'previous_application_CODE_REJECT_REASON_VERIF_count_norm', 'previous_application_CODE_REJECT_REASON_XAP_count', 'previous_application_CODE_REJECT_REASON_XAP_count_norm', 'previous_application_CODE_REJECT_REASON_XNA_count', 'previous_application_CODE_REJECT_REASON_XNA_count_norm', 'previous_application_NAME_TYPE_SUITE_Children_count', 'previous_application_NAME_TYPE_SUITE_Children_count_norm', 'previous_application_NAME_TYPE_SUITE_Family_count', 'previous_application_NAME_TYPE_SUITE_Family_count_norm', 'previous_application_NAME_TYPE_SUITE_Group of people_count', 'previous_application_NAME_TYPE_SUITE_Group of people_count_norm', 'previous_application_NAME_TYPE_SUITE_Other_A_count', 'previous_application_NAME_TYPE_SUITE_Other_A_count_norm', 'previous_application_NAME_TYPE_SUITE_Other_B_count', 'previous_application_NAME_TYPE_SUITE_Other_B_count_norm', 'previous_application_NAME_TYPE_SUITE_Spouse, partner_count', 'previous_application_NAME_TYPE_SUITE_Spouse, partner_count_norm', 'previous_application_NAME_TYPE_SUITE_Unaccompanied_count', 'previous_application_NAME_TYPE_SUITE_Unaccompanied_count_norm', 'previous_application_NAME_CLIENT_TYPE_New_count', 'previous_application_NAME_CLIENT_TYPE_New_count_norm', 'previous_application_NAME_CLIENT_TYPE_Refreshed_count', 'previous_application_NAME_CLIENT_TYPE_Refreshed_count_norm', 'previous_application_NAME_CLIENT_TYPE_Repeater_count', 'previous_application_NAME_CLIENT_TYPE_Repeater_count_norm', 'previous_application_NAME_CLIENT_TYPE_XNA_count', 'previous_application_NAME_CLIENT_TYPE_XNA_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Additional Service_count', 'previous_application_NAME_GOODS_CATEGORY_Additional Service_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Animals_count', 'previous_application_NAME_GOODS_CATEGORY_Animals_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Audio/Video_count', 'previous_application_NAME_GOODS_CATEGORY_Audio/Video_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Auto Accessories_count', 'previous_application_NAME_GOODS_CATEGORY_Auto Accessories_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Clothing and Accessories_count', 'previous_application_NAME_GOODS_CATEGORY_Clothing and Accessories_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Computers_count', 'previous_application_NAME_GOODS_CATEGORY_Computers_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Construction Materials_count', 'previous_application_NAME_GOODS_CATEGORY_Construction Materials_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Consumer Electronics_count', 'previous_application_NAME_GOODS_CATEGORY_Consumer Electronics_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Direct Sales_count', 'previous_application_NAME_GOODS_CATEGORY_Direct Sales_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Education_count', 'previous_application_NAME_GOODS_CATEGORY_Education_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Fitness_count', 'previous_application_NAME_GOODS_CATEGORY_Fitness_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Furniture_count', 'previous_application_NAME_GOODS_CATEGORY_Furniture_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Gardening_count', 'previous_application_NAME_GOODS_CATEGORY_Gardening_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Homewares_count', 'previous_application_NAME_GOODS_CATEGORY_Homewares_count_norm', 'previous_application_NAME_GOODS_CATEGORY_House Construction_count', 'previous_application_NAME_GOODS_CATEGORY_House Construction_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Insurance_count', 'previous_application_NAME_GOODS_CATEGORY_Insurance_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Jewelry_count', 'previous_application_NAME_GOODS_CATEGORY_Jewelry_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Medical Supplies_count', 'previous_application_NAME_GOODS_CATEGORY_Medical Supplies_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Medicine_count', 'previous_application_NAME_GOODS_CATEGORY_Medicine_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Mobile_count', 'previous_application_NAME_GOODS_CATEGORY_Mobile_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Office Appliances_count', 'previous_application_NAME_GOODS_CATEGORY_Office Appliances_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Other_count', 'previous_application_NAME_GOODS_CATEGORY_Other_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Photo / Cinema Equipment_count', 'previous_application_NAME_GOODS_CATEGORY_Photo / Cinema Equipment_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Sport and Leisure_count', 'previous_application_NAME_GOODS_CATEGORY_Sport and Leisure_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Tourism_count', 'previous_application_NAME_GOODS_CATEGORY_Tourism_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Vehicles_count', 'previous_application_NAME_GOODS_CATEGORY_Vehicles_count_norm', 'previous_application_NAME_GOODS_CATEGORY_Weapon_count', 'previous_application_NAME_GOODS_CATEGORY_Weapon_count_norm', 'previous_application_NAME_GOODS_CATEGORY_XNA_count', 'previous_application_NAME_GOODS_CATEGORY_XNA_count_norm', 'previous_application_NAME_PORTFOLIO_Cards_count', 'previous_application_NAME_PORTFOLIO_Cards_count_norm', 'previous_application_NAME_PORTFOLIO_Cars_count', 'previous_application_NAME_PORTFOLIO_Cars_count_norm', 'previous_application_NAME_PORTFOLIO_Cash_count', 'previous_application_NAME_PORTFOLIO_Cash_count_norm', 'previous_application_NAME_PORTFOLIO_POS_count', 'previous_application_NAME_PORTFOLIO_POS_count_norm', 'previous_application_NAME_PORTFOLIO_XNA_count', 'previous_application_NAME_PORTFOLIO_XNA_count_norm', 'previous_application_NAME_PRODUCT_TYPE_XNA_count', 'previous_application_NAME_PRODUCT_TYPE_XNA_count_norm', 'previous_application_NAME_PRODUCT_TYPE_walk-in_count', 'previous_application_NAME_PRODUCT_TYPE_walk-in_count_norm', 'previous_application_NAME_PRODUCT_TYPE_x-sell_count', 'previous_application_NAME_PRODUCT_TYPE_x-sell_count_norm', 'previous_application_CHANNEL_TYPE_AP+ (Cash loan)_count', 'previous_application_CHANNEL_TYPE_AP+ (Cash loan)_count_norm', 'previous_application_CHANNEL_TYPE_Car dealer_count', 'previous_application_CHANNEL_TYPE_Car dealer_count_norm', 'previous_application_CHANNEL_TYPE_Channel of corporate sales_count', 'previous_application_CHANNEL_TYPE_Channel of corporate sales_count_norm', 'previous_application_CHANNEL_TYPE_Contact center_count', 'previous_application_CHANNEL_TYPE_Contact center_count_norm', 'previous_application_CHANNEL_TYPE_Country-wide_count', 'previous_application_CHANNEL_TYPE_Country-wide_count_norm', 'previous_application_CHANNEL_TYPE_Credit and cash offices_count', 'previous_application_CHANNEL_TYPE_Credit and cash offices_count_norm', 'previous_application_CHANNEL_TYPE_Regional / Local_count', 'previous_application_CHANNEL_TYPE_Regional / Local_count_norm', 'previous_application_CHANNEL_TYPE_Stone_count', 'previous_application_CHANNEL_TYPE_Stone_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Auto technology_count', 'previous_application_NAME_SELLER_INDUSTRY_Auto technology_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Clothing_count', 'previous_application_NAME_SELLER_INDUSTRY_Clothing_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Connectivity_count', 'previous_application_NAME_SELLER_INDUSTRY_Connectivity_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Construction_count', 'previous_application_NAME_SELLER_INDUSTRY_Construction_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Consumer electronics_count', 'previous_application_NAME_SELLER_INDUSTRY_Consumer electronics_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Furniture_count', 'previous_application_NAME_SELLER_INDUSTRY_Furniture_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Industry_count', 'previous_application_NAME_SELLER_INDUSTRY_Industry_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Jewelry_count', 'previous_application_NAME_SELLER_INDUSTRY_Jewelry_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_MLM partners_count', 'previous_application_NAME_SELLER_INDUSTRY_MLM partners_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_Tourism_count', 'previous_application_NAME_SELLER_INDUSTRY_Tourism_count_norm', 'previous_application_NAME_SELLER_INDUSTRY_XNA_count', 'previous_application_NAME_SELLER_INDUSTRY_XNA_count_norm', 'previous_application_NAME_YIELD_GROUP_XNA_count', 'previous_application_NAME_YIELD_GROUP_XNA_count_norm', 'previous_application_NAME_YIELD_GROUP_high_count', 'previous_application_NAME_YIELD_GROUP_high_count_norm', 'previous_application_NAME_YIELD_GROUP_low_action_count', 'previous_application_NAME_YIELD_GROUP_low_action_count_norm', 'previous_application_NAME_YIELD_GROUP_low_normal_count', 'previous_application_NAME_YIELD_GROUP_low_normal_count_norm', 'previous_application_NAME_YIELD_GROUP_middle_count', 'previous_application_NAME_YIELD_GROUP_middle_count_norm', 'previous_application_PRODUCT_COMBINATION_Card Street_count', 'previous_application_PRODUCT_COMBINATION_Card Street_count_norm', 'previous_application_PRODUCT_COMBINATION_Card X-Sell_count', 'previous_application_PRODUCT_COMBINATION_Card X-Sell_count_norm', 'previous_application_PRODUCT_COMBINATION_Cash_count', 'previous_application_PRODUCT_COMBINATION_Cash_count_norm', 'previous_application_PRODUCT_COMBINATION_Cash Street: high_count', 'previous_application_PRODUCT_COMBINATION_Cash Street: high_count_norm', 'previous_application_PRODUCT_COMBINATION_Cash Street: low_count', 'previous_application_PRODUCT_COMBINATION_Cash Street: low_count_norm', 'previous_application_PRODUCT_COMBINATION_Cash Street: middle_count', 'previous_application_PRODUCT_COMBINATION_Cash Street: middle_count_norm', 'previous_application_PRODUCT_COMBINATION_Cash X-Sell: high_count', 'previous_application_PRODUCT_COMBINATION_Cash X-Sell: high_count_norm', 'previous_application_PRODUCT_COMBINATION_Cash X-Sell: low_count', 'previous_application_PRODUCT_COMBINATION_Cash X-Sell: low_count_norm', 'previous_application_PRODUCT_COMBINATION_Cash X-Sell: middle_count', 'previous_application_PRODUCT_COMBINATION_Cash X-Sell: middle_count_norm', 'previous_application_PRODUCT_COMBINATION_POS household with interest_count', 'previous_application_PRODUCT_COMBINATION_POS household with interest_count_norm', 'previous_application_PRODUCT_COMBINATION_POS household without interest_count', 'previous_application_PRODUCT_COMBINATION_POS household without interest_count_norm', 'previous_application_PRODUCT_COMBINATION_POS industry with interest_count', 'previous_application_PRODUCT_COMBINATION_POS industry with interest_count_norm', 'previous_application_PRODUCT_COMBINATION_POS industry without interest_count', 'previous_application_PRODUCT_COMBINATION_POS industry without interest_count_norm', 'previous_application_PRODUCT_COMBINATION_POS mobile with interest_count', 'previous_application_PRODUCT_COMBINATION_POS mobile with interest_count_norm', 'previous_application_PRODUCT_COMBINATION_POS mobile without interest_count', 'previous_application_PRODUCT_COMBINATION_POS mobile without interest_count_norm', 'previous_application_PRODUCT_COMBINATION_POS other with interest_count', 'previous_application_PRODUCT_COMBINATION_POS other with interest_count_norm', 'previous_application_PRODUCT_COMBINATION_POS others without interest_count', 'previous_application_PRODUCT_COMBINATION_POS others without interest_count_norm']
 
-    POS_CASH_balance_num_agg_SK_ID_CURR = agg_numeric(POS_CASH_balance.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='POS_CASH_balance')
-    POS_CASH_balance_cat_agg_SK_ID_CURR = count_categorical(POS_CASH_balance.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='POS_CASH_balance')
+    previous_application_num_agg_SK_ID_CURR = agg_numeric(previous_application.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='previous_application', expected_columns_after_numeric_aggregation=previous_application_expected_columns_after_numeric_aggregation)
+    previous_application_cat_agg_SK_ID_CURR = count_categorical(previous_application.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='previous_application', expected_columns_after_categorical_aggregation=previous_application_expected_columns_after_categorical_aggregation)
 
-    credit_card_balance_num_agg_SK_ID_CURR = agg_numeric(credit_card_balance.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='credit_card_balance')
-    credit_card_balance_cat_agg_SK_ID_CURR = count_categorical(credit_card_balance.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='credit_card_balance')
+    # List of expected columns after aggregation in case input is empty for POS_CASH_balance
 
-    installments_payments_num_agg_SK_ID_CURR = agg_numeric(installments_payments.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='credit_card_balance')
+    POS_CASH_balance_expected_columns_after_numeric_aggregation = [
+       'SK_ID_CURR', 'POS_CASH_balance_MONTHS_BALANCE_count',
+       'POS_CASH_balance_MONTHS_BALANCE_mean',
+       'POS_CASH_balance_MONTHS_BALANCE_max',
+       'POS_CASH_balance_MONTHS_BALANCE_min',
+       'POS_CASH_balance_MONTHS_BALANCE_sum',
+       'POS_CASH_balance_CNT_INSTALMENT_count',
+       'POS_CASH_balance_CNT_INSTALMENT_mean',
+       'POS_CASH_balance_CNT_INSTALMENT_max',
+       'POS_CASH_balance_CNT_INSTALMENT_min',
+       'POS_CASH_balance_CNT_INSTALMENT_sum',
+       'POS_CASH_balance_CNT_INSTALMENT_FUTURE_count',
+       'POS_CASH_balance_CNT_INSTALMENT_FUTURE_mean',
+       'POS_CASH_balance_CNT_INSTALMENT_FUTURE_max',
+       'POS_CASH_balance_CNT_INSTALMENT_FUTURE_min',
+       'POS_CASH_balance_CNT_INSTALMENT_FUTURE_sum',
+       'POS_CASH_balance_SK_DPD_count', 'POS_CASH_balance_SK_DPD_mean',
+       'POS_CASH_balance_SK_DPD_max', 'POS_CASH_balance_SK_DPD_min',
+       'POS_CASH_balance_SK_DPD_sum', 'POS_CASH_balance_SK_DPD_DEF_count',
+       'POS_CASH_balance_SK_DPD_DEF_mean', 'POS_CASH_balance_SK_DPD_DEF_max',
+       'POS_CASH_balance_SK_DPD_DEF_min', 'POS_CASH_balance_SK_DPD_DEF_sum'
+       ]
+    
+    POS_CASH_balance_expected_columns_after_categorical_aggregation = [
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Active_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Active_count_norm',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Amortized debt_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Amortized debt_count_norm',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Approved_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Approved_count_norm',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Canceled_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Canceled_count_norm',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Completed_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Completed_count_norm',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Demand_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Demand_count_norm',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Returned to the store_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Returned to the store_count_norm',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Signed_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_Signed_count_norm',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_XNA_count',
+       'POS_CASH_balance_NAME_CONTRACT_STATUS_XNA_count_norm'
+       ]
+
+    POS_CASH_balance_num_agg_SK_ID_CURR = agg_numeric(POS_CASH_balance.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='POS_CASH_balance', expected_columns_after_numeric_aggregation=POS_CASH_balance_expected_columns_after_numeric_aggregation)
+    POS_CASH_balance_cat_agg_SK_ID_CURR = count_categorical(POS_CASH_balance.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='POS_CASH_balance', expected_columns_after_categorical_aggregation=POS_CASH_balance_expected_columns_after_categorical_aggregation)
+
+    # List of expected columns after aggregation in case input is empty for credit_card_balance
+
+    credit_card_balance_expected_columns_after_numerical_aggregation = ['SK_ID_CURR', 'credit_card_balance_MONTHS_BALANCE_count', 'credit_card_balance_MONTHS_BALANCE_mean', 'credit_card_balance_MONTHS_BALANCE_max', 'credit_card_balance_MONTHS_BALANCE_min', 'credit_card_balance_MONTHS_BALANCE_sum', 'credit_card_balance_AMT_BALANCE_count', 'credit_card_balance_AMT_BALANCE_mean', 'credit_card_balance_AMT_BALANCE_max', 'credit_card_balance_AMT_BALANCE_min', 'credit_card_balance_AMT_BALANCE_sum', 'credit_card_balance_AMT_CREDIT_LIMIT_ACTUAL_count', 'credit_card_balance_AMT_CREDIT_LIMIT_ACTUAL_mean', 'credit_card_balance_AMT_CREDIT_LIMIT_ACTUAL_max', 'credit_card_balance_AMT_CREDIT_LIMIT_ACTUAL_min', 'credit_card_balance_AMT_CREDIT_LIMIT_ACTUAL_sum', 'credit_card_balance_AMT_DRAWINGS_ATM_CURRENT_count', 'credit_card_balance_AMT_DRAWINGS_ATM_CURRENT_mean', 'credit_card_balance_AMT_DRAWINGS_ATM_CURRENT_max', 'credit_card_balance_AMT_DRAWINGS_ATM_CURRENT_min', 'credit_card_balance_AMT_DRAWINGS_ATM_CURRENT_sum', 'credit_card_balance_AMT_DRAWINGS_CURRENT_count', 'credit_card_balance_AMT_DRAWINGS_CURRENT_mean', 'credit_card_balance_AMT_DRAWINGS_CURRENT_max', 'credit_card_balance_AMT_DRAWINGS_CURRENT_min', 'credit_card_balance_AMT_DRAWINGS_CURRENT_sum', 'credit_card_balance_AMT_DRAWINGS_OTHER_CURRENT_count', 'credit_card_balance_AMT_DRAWINGS_OTHER_CURRENT_mean', 'credit_card_balance_AMT_DRAWINGS_OTHER_CURRENT_max', 'credit_card_balance_AMT_DRAWINGS_OTHER_CURRENT_min', 'credit_card_balance_AMT_DRAWINGS_OTHER_CURRENT_sum', 'credit_card_balance_AMT_DRAWINGS_POS_CURRENT_count', 'credit_card_balance_AMT_DRAWINGS_POS_CURRENT_mean', 'credit_card_balance_AMT_DRAWINGS_POS_CURRENT_max', 'credit_card_balance_AMT_DRAWINGS_POS_CURRENT_min', 'credit_card_balance_AMT_DRAWINGS_POS_CURRENT_sum', 'credit_card_balance_AMT_INST_MIN_REGULARITY_count', 'credit_card_balance_AMT_INST_MIN_REGULARITY_mean', 'credit_card_balance_AMT_INST_MIN_REGULARITY_max', 'credit_card_balance_AMT_INST_MIN_REGULARITY_min', 'credit_card_balance_AMT_INST_MIN_REGULARITY_sum', 'credit_card_balance_AMT_PAYMENT_CURRENT_count', 'credit_card_balance_AMT_PAYMENT_CURRENT_mean', 'credit_card_balance_AMT_PAYMENT_CURRENT_max', 'credit_card_balance_AMT_PAYMENT_CURRENT_min', 'credit_card_balance_AMT_PAYMENT_CURRENT_sum', 'credit_card_balance_AMT_PAYMENT_TOTAL_CURRENT_count', 'credit_card_balance_AMT_PAYMENT_TOTAL_CURRENT_mean', 'credit_card_balance_AMT_PAYMENT_TOTAL_CURRENT_max', 'credit_card_balance_AMT_PAYMENT_TOTAL_CURRENT_min', 'credit_card_balance_AMT_PAYMENT_TOTAL_CURRENT_sum', 'credit_card_balance_AMT_RECEIVABLE_PRINCIPAL_count', 'credit_card_balance_AMT_RECEIVABLE_PRINCIPAL_mean', 'credit_card_balance_AMT_RECEIVABLE_PRINCIPAL_max', 'credit_card_balance_AMT_RECEIVABLE_PRINCIPAL_min', 'credit_card_balance_AMT_RECEIVABLE_PRINCIPAL_sum', 'credit_card_balance_AMT_RECIVABLE_count', 'credit_card_balance_AMT_RECIVABLE_mean', 'credit_card_balance_AMT_RECIVABLE_max', 'credit_card_balance_AMT_RECIVABLE_min', 'credit_card_balance_AMT_RECIVABLE_sum', 'credit_card_balance_AMT_TOTAL_RECEIVABLE_count', 'credit_card_balance_AMT_TOTAL_RECEIVABLE_mean', 'credit_card_balance_AMT_TOTAL_RECEIVABLE_max', 'credit_card_balance_AMT_TOTAL_RECEIVABLE_min', 'credit_card_balance_AMT_TOTAL_RECEIVABLE_sum', 'credit_card_balance_CNT_DRAWINGS_ATM_CURRENT_count', 'credit_card_balance_CNT_DRAWINGS_ATM_CURRENT_mean', 'credit_card_balance_CNT_DRAWINGS_ATM_CURRENT_max', 'credit_card_balance_CNT_DRAWINGS_ATM_CURRENT_min', 'credit_card_balance_CNT_DRAWINGS_ATM_CURRENT_sum', 'credit_card_balance_CNT_DRAWINGS_CURRENT_count', 'credit_card_balance_CNT_DRAWINGS_CURRENT_mean', 'credit_card_balance_CNT_DRAWINGS_CURRENT_max', 'credit_card_balance_CNT_DRAWINGS_CURRENT_min', 'credit_card_balance_CNT_DRAWINGS_CURRENT_sum', 'credit_card_balance_CNT_DRAWINGS_OTHER_CURRENT_count', 'credit_card_balance_CNT_DRAWINGS_OTHER_CURRENT_mean', 'credit_card_balance_CNT_DRAWINGS_OTHER_CURRENT_max', 'credit_card_balance_CNT_DRAWINGS_OTHER_CURRENT_min', 'credit_card_balance_CNT_DRAWINGS_OTHER_CURRENT_sum', 'credit_card_balance_CNT_DRAWINGS_POS_CURRENT_count', 'credit_card_balance_CNT_DRAWINGS_POS_CURRENT_mean', 'credit_card_balance_CNT_DRAWINGS_POS_CURRENT_max', 'credit_card_balance_CNT_DRAWINGS_POS_CURRENT_min', 'credit_card_balance_CNT_DRAWINGS_POS_CURRENT_sum', 'credit_card_balance_CNT_INSTALMENT_MATURE_CUM_count', 'credit_card_balance_CNT_INSTALMENT_MATURE_CUM_mean', 'credit_card_balance_CNT_INSTALMENT_MATURE_CUM_max', 'credit_card_balance_CNT_INSTALMENT_MATURE_CUM_min', 'credit_card_balance_CNT_INSTALMENT_MATURE_CUM_sum', 'credit_card_balance_SK_DPD_count', 'credit_card_balance_SK_DPD_mean', 'credit_card_balance_SK_DPD_max', 'credit_card_balance_SK_DPD_min', 'credit_card_balance_SK_DPD_sum', 'credit_card_balance_SK_DPD_DEF_count', 'credit_card_balance_SK_DPD_DEF_mean', 'credit_card_balance_SK_DPD_DEF_max', 'credit_card_balance_SK_DPD_DEF_min', 'credit_card_balance_SK_DPD_DEF_sum']
+
+    credit_card_balance_expected_columns_after_categorical_aggregation = [
+       'credit_card_balance_NAME_CONTRACT_STATUS_Active_count',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Active_count_norm',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Approved_count',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Approved_count_norm',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Completed_count',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Completed_count_norm',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Demand_count',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Demand_count_norm',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Refused_count',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Refused_count_norm',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Sent proposal_count',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Sent proposal_count_norm',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Signed_count',
+       'credit_card_balance_NAME_CONTRACT_STATUS_Signed_count_norm'
+       ]
+
+    credit_card_balance_num_agg_SK_ID_CURR = agg_numeric(credit_card_balance.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='credit_card_balance', expected_columns_after_numeric_aggregation=credit_card_balance_expected_columns_after_numerical_aggregation)
+    credit_card_balance_cat_agg_SK_ID_CURR = count_categorical(credit_card_balance.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='credit_card_balance', expected_columns_after_categorical_aggregation=credit_card_balance_expected_columns_after_categorical_aggregation)
+
+    # List of expected columns after aggregation in case input is empty for installments_payments
+
+    installments_payments_expected_columns_after_numerical_aggregation = [
+       'SK_ID_CURR', 'credit_card_balance_NUM_INSTALMENT_VERSION_count',
+       'credit_card_balance_NUM_INSTALMENT_VERSION_mean',
+       'credit_card_balance_NUM_INSTALMENT_VERSION_max',
+       'credit_card_balance_NUM_INSTALMENT_VERSION_min',
+       'credit_card_balance_NUM_INSTALMENT_VERSION_sum',
+       'credit_card_balance_NUM_INSTALMENT_NUMBER_count',
+       'credit_card_balance_NUM_INSTALMENT_NUMBER_mean',
+       'credit_card_balance_NUM_INSTALMENT_NUMBER_max',
+       'credit_card_balance_NUM_INSTALMENT_NUMBER_min',
+       'credit_card_balance_NUM_INSTALMENT_NUMBER_sum',
+       'credit_card_balance_DAYS_INSTALMENT_count',
+       'credit_card_balance_DAYS_INSTALMENT_mean',
+       'credit_card_balance_DAYS_INSTALMENT_max',
+       'credit_card_balance_DAYS_INSTALMENT_min',
+       'credit_card_balance_DAYS_INSTALMENT_sum',
+       'credit_card_balance_DAYS_ENTRY_PAYMENT_count',
+       'credit_card_balance_DAYS_ENTRY_PAYMENT_mean',
+       'credit_card_balance_DAYS_ENTRY_PAYMENT_max',
+       'credit_card_balance_DAYS_ENTRY_PAYMENT_min',
+       'credit_card_balance_DAYS_ENTRY_PAYMENT_sum',
+       'credit_card_balance_AMT_INSTALMENT_count',
+       'credit_card_balance_AMT_INSTALMENT_mean',
+       'credit_card_balance_AMT_INSTALMENT_max',
+       'credit_card_balance_AMT_INSTALMENT_min',
+       'credit_card_balance_AMT_INSTALMENT_sum',
+       'credit_card_balance_AMT_PAYMENT_count',
+       'credit_card_balance_AMT_PAYMENT_mean',
+       'credit_card_balance_AMT_PAYMENT_max',
+       'credit_card_balance_AMT_PAYMENT_min',
+       'credit_card_balance_AMT_PAYMENT_sum'
+       ]
+
+    installments_payments_num_agg_SK_ID_CURR = agg_numeric(installments_payments.drop(columns=['SK_ID_PREV']), group_var='SK_ID_CURR', df_name='credit_card_balance', expected_columns_after_numeric_aggregation=installments_payments_expected_columns_after_numerical_aggregation)
 
     dfs_to_merge = [installments_payments_num_agg_SK_ID_CURR, 
                 previous_application_num_agg_SK_ID_CURR, previous_application_cat_agg_SK_ID_CURR, 
