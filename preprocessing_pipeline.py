@@ -531,16 +531,56 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     
     manual_final_bureau_balance_features_with_curr_agg = agg_numeric(final_bureau_balance_features_with_curr.drop(columns = ['SK_ID_BUREAU']), group_var = 'SK_ID_CURR', df_name = 'client_bureau_balance', expected_columns_after_numeric_aggregation=manual_final_bureau_balance_features_with_curr_expected_columns_after_numeric_aggregation)
 
-    dfs_to_merge = [num_features_with_function_bureau,
+    final_bureau_features_expected_columns = [
+       'SK_ID_CURR', 'Active', 'Bad debt', 'Closed', 'Sold',
+       'CREDIT_TYPE_Another type of loan', 'CREDIT_TYPE_Car loan',
+       'CREDIT_TYPE_Cash loan (non-earmarked)', 'CREDIT_TYPE_Consumer credit',
+       'CREDIT_TYPE_Credit card', 'CREDIT_TYPE_Interbank credit',
+       'CREDIT_TYPE_Loan for business development',
+       'CREDIT_TYPE_Loan for purchase of shares (margin lending)',
+       'CREDIT_TYPE_Loan for the purchase of equipment',
+       'CREDIT_TYPE_Loan for working capital replenishment',
+       'CREDIT_TYPE_Microloan', 'CREDIT_TYPE_Mobile operator loan',
+       'CREDIT_TYPE_Mortgage', 'CREDIT_TYPE_Real estate loan',
+       'CREDIT_TYPE_Unknown type of loan', 'AMT_CREDIT_MAX_OVERDUE',
+       'AMT_CREDIT_SUM_OVERDUE', 'CNT_CREDIT_PROLONG', 'AMT_CREDIT_SUM_DEBT',
+       'AMT_CREDIT_SUM', 'PROPORTION_REPAID', 'LOAN_ACTIVE_PAST_DEADLINE',
+       'CREDIT_DAY_OVERDUE'
+       ]
+
+
+    dfs_to_merge = [
+    num_features_with_function_bureau,
     cat_features_with_function_bureau,
     final_bureau_features,
     num_and_cat_features_with_function_bureau_balance_with_curr_agg,
-    manual_final_bureau_balance_features_with_curr_agg]
+    manual_final_bureau_balance_features_with_curr_agg
+    ]
+
+    validated_dfs_to_merge = []
+
+    list_of_expected_features_per_df = [
+    bureau_expected_columns_after_numeric_aggregation, bureau_expected_columns_after_categorical_aggregation, 
+    final_bureau_features_expected_columns,
+    num_and_cat_features_with_function_bureau_balance_with_curr_expected_columns_after_numeric_aggregation,
+    manual_final_bureau_balance_features_with_curr_expected_columns_after_numeric_aggregation
+    ]
+
 
     merge_key = 'SK_ID_CURR'
 
-    merge_function = lambda left_df, right_df: pd.merge(left_df, right_df, on=merge_key, how='left')
-    features_manual_and_func_from_first_three_without_app_train = reduce(merge_function, dfs_to_merge)
+    for df_unchecked, expected_col_list in zip(dfs_to_merge, list_of_expected_features_per_df): #utiliser zip plutot que if and sinon ca va pas faire correspondre correctement les deux conditions par exemple ça va mettre df 2 avec liste de colonne 1
+        if df_unchecked.empty :
+            df_corrected = pd.DataFrame(columns=expected_col_list)
+            validated_dfs_to_merge.append(df_corrected)
+        else :
+            validated_dfs_to_merge.append(df_unchecked)
+
+    merge_key = 'SK_ID_CURR'
+
+    merge_function = lambda left_df, right_df: pd.merge(left_df, right_df, on=merge_key, how='inner')
+    features_manual_and_func_from_first_three_without_app_train = reduce(merge_function, validated_dfs_to_merge)
+
 
     features_manual_and_func_from_first_three_with_app_train = pd.merge(left=current_app, right=features_manual_and_func_from_first_three_without_app_train, how='left', on='SK_ID_CURR')
 
