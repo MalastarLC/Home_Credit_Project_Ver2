@@ -579,7 +579,21 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     merge_key = 'SK_ID_CURR'
 
     merge_function = lambda left_df, right_df: pd.merge(left_df, right_df, on=merge_key, how='inner')
-    features_manual_and_func_from_first_three_without_app_train = reduce(merge_function, validated_dfs_to_merge)
+    i=0
+    for df in validated_dfs_to_merge :
+        if df.empty :
+            i+=1
+
+    unique_cols_set = set()
+
+    if i > 0 :
+        for col_list in list_of_expected_features_per_df :
+            for col_name in col_list :
+                unique_cols_set.add(col_name)
+        complete_list_of_columns = list(unique_cols_set)
+        features_manual_and_func_from_first_three_without_app_train = pd.DataFrame(columns=complete_list_of_columns)
+    else : 
+        features_manual_and_func_from_first_three_without_app_train = reduce(merge_function, validated_dfs_to_merge)
 
     # Failproof net si features_manual_and_func_from_first_three_without_app_train est vide
 
