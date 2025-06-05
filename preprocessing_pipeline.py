@@ -581,9 +581,19 @@ def prepare_input_data(current_app, bureau, bureau_balance, previous_application
     merge_function = lambda left_df, right_df: pd.merge(left_df, right_df, on=merge_key, how='inner')
     features_manual_and_func_from_first_three_without_app_train = reduce(merge_function, validated_dfs_to_merge)
 
+    # Failproof net si features_manual_and_func_from_first_three_without_app_train est vide
 
-    features_manual_and_func_from_first_three_with_app_train = pd.merge(left=current_app, right=features_manual_and_func_from_first_three_without_app_train, how='left', on='SK_ID_CURR')
+    unique_cols_set = set() #Besoin de faire un set sinon dupliqué des SK_ID_CURR
 
+    if features_manual_and_func_from_first_three_without_app_train.empty :
+        for col_list in list_of_expected_features_per_df :
+            for col_name in col_list :
+                unique_cols_set.add(col_name)
+        complete_list_of_columns = list(unique_cols_set)
+        features_manual_and_func_from_first_three_with_app_train = pd.merge(left=current_app, right=pd.DataFrame(columns=complete_list_of_columns), how='left', on="SK_ID_CURR")
+    else :
+        features_manual_and_func_from_first_three_with_app_train = pd.merge(left=current_app, right=features_manual_and_func_from_first_three_without_app_train, how='left', on='SK_ID_CURR')
+        
     # Aggrégation à l'aide des fonctions de previous_application, POS_CASH_balance, installments_payments et credit_card_balance
 
     if previous_application.shape == (0,0) : 
